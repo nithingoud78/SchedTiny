@@ -1,0 +1,6 @@
+---
+# Interrupt Sweep Base Config
+isr_load:
+  enabled: true
+  source: TIM2
+  rate_hz: 1000 # To be overridden by test runner script

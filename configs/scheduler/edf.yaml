@@ -1,0 +1,47 @@
+---
+# EDF Scheduling Configuration
+# Earliest Deadline First — dynamic priority scheduling.
+# Requires FreeRTOS with EDF extension (e.g., Litmus^RT or custom port).
+# See docs/SPEC.md REQ-SCHED-003.
+#
+# WARNING: EDF on FreeRTOS requires a port that supports dynamic priorities.
+# Verify port compatibility before enabling. See firmware/src/scheduler/sched_policy.h.
+
+scheduler:
+  policy: EDF
+  tick_rate_hz: 1000
+  preemption_enabled: true
+  time_slicing: false
+
+# Task absolute deadlines are computed from: arrival_time + deadline_ms
+tasks:
+  pid:
+    period_ms: 1
+    wcet_budget_us: 200
+    deadline_ms: 1
+    is_hard: true
+
+  sensor:
+    period_ms: 10
+    wcet_budget_us: 500
+    deadline_ms: 10
+    is_hard: false
+
+  infer:
+    period_ms: 40
+    wcet_budget_us: 30000
+    deadline_ms: 40
+    is_hard: false
+    model: kws
+
+# Inherit ISR and benchmark from fp_default.yaml
+isr_load:
+  enabled: false
+  source: TIM2
+  rate_hz: 0
+
+benchmark:
+  samples_per_condition: 1000
+  warmup_samples: 100
+  log_format: json
+  measurement_window_s: 60

@@ -1,0 +1,33 @@
+---
+# Default Task Configuration
+# Extracted from fp_default.yaml to maintain separation of concerns.
+
+tasks:
+  pid:
+    name: "PID_Control"
+    period_ms: 1
+    wcet_budget_us: 200
+    priority: 4
+    deadline_ms: 1
+    is_hard: true
+
+  sensor:
+    name: "Sensor_Acq"
+    period_ms: 10
+    wcet_budget_us: 500
+    priority: 3
+    deadline_ms: 10
+    is_hard: false
+
+  infer:
+    name: "TinyML_Infer"
+    period_ms: 40
+    wcet_budget_us: 30000
+    priority: 2
+    deadline_ms: 40
+    is_hard: false
+    model: kws
+
+  idle:
+    name: "IDLE"
+    priority: 0

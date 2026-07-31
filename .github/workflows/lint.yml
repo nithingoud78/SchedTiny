@@ -1,0 +1,73 @@
+name: Lint — Python and C Style Checks
+
+"on":
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  python-lint:
+    name: Python Lint (black + flake8 + mypy)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install linters
+        run: |
+          pip install black==24.4.2 flake8==7.1.0 mypy==1.10.1
+          pip install -r scripts/requirements.txt
+
+      - name: Run black (format check)
+        run: black --check --diff scripts/
+
+      - name: Run flake8 (style check)
+        run: flake8 scripts/ --max-line-length=100 --ignore=E203,W503
+
+      - name: Run mypy (type check)
+        run: mypy scripts/ --ignore-missing-imports
+
+  c-format:
+    name: C Format Check (clang-format)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y clang-format
+
+      - name: Check C formatting
+        run: |
+          find firmware/core firmware/include \
+               -name "*.c" -o -name "*.h" | \
+          xargs clang-format --dry-run --Werror \
+               --style=file:tools/clang-format/.clang-format
+
+  yaml-lint:
+    name: YAML Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run yamllint
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: configs/ .github/
+          config_data: |
+            extends: default
+            rules:
+              line-length:
+                max: 120

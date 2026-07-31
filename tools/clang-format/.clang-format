@@ -1,0 +1,94 @@
+# SchedTiny clang-format configuration
+# Applied to all C source files in firmware/src/ and firmware/include/
+# Run: clang-format -i -style=file:tools/clang-format/.clang-format <files>
+# CI enforcement: see .github/workflows/lint.yml
+
+BasedOnStyle: Google
+
+# ---------------------------------------------------------------------------
+# Indentation
+# ---------------------------------------------------------------------------
+IndentWidth:              4
+TabWidth:                 4
+UseTab:                   Never
+ContinuationIndentWidth:  4
+
+# ---------------------------------------------------------------------------
+# Brace style (Allman — opening brace on new line)
+# ---------------------------------------------------------------------------
+BreakBeforeBraces:        Allman
+
+# ---------------------------------------------------------------------------
+# Line length
+# ---------------------------------------------------------------------------
+ColumnLimit:              100
+
+# ---------------------------------------------------------------------------
+# Alignment
+# ---------------------------------------------------------------------------
+AlignConsecutiveMacros:
+  Enabled:           true
+  AcrossEmptyLines:  false
+  AcrossComments:    false
+
+AlignConsecutiveAssignments:
+  Enabled:           true
+  AcrossEmptyLines:  false
+  AcrossComments:    false
+
+AlignConsecutiveDeclarations:
+  Enabled:           false
+
+AlignTrailingComments:
+  Kind:             Always
+  OverEmptyLines:   1
+
+# ---------------------------------------------------------------------------
+# Pointer and reference alignment
+# ---------------------------------------------------------------------------
+PointerAlignment:         Right   # uint32_t *ptr (not uint32_t* ptr)
+ReferenceAlignment:       Right
+
+# ---------------------------------------------------------------------------
+# Includes
+# ---------------------------------------------------------------------------
+SortIncludes:             CaseSensitive
+IncludeBlocks:            Regroup
+IncludeCategories:
+  # 1. Own header
+  - Regex:    '^"(sched|bench|hal|ml|task|model).*\.h"'
+    Priority: 1
+  # 2. SchedTiny headers
+  - Regex:    '^"schedtiny.*\.h"'
+    Priority: 2
+  # 3. FreeRTOS headers
+  - Regex:    '^"FreeRTOS.*\.h"|^"task\.h"|^"queue\.h"'
+    Priority: 3
+  # 4. STM32 HAL headers
+  - Regex:    '^"stm32.*\.h"|^"cmsis.*\.h"'
+    Priority: 4
+  # 5. Standard library
+  - Regex:    '^<.*>'
+    Priority: 5
+
+# ---------------------------------------------------------------------------
+# Function declarations
+# ---------------------------------------------------------------------------
+AllowShortFunctionsOnASingleLine:  None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine:      false
+BinPackParameters:                 false
+AllowAllParametersOfDeclarationOnNextLine: false
+
+# ---------------------------------------------------------------------------
+# Comments
+# ---------------------------------------------------------------------------
+ReflowComments:            true
+SpacesBeforeTrailingComments: 2
+
+# ---------------------------------------------------------------------------
+# Miscellaneous
+# ---------------------------------------------------------------------------
+InsertNewlineAtEOF:        true
+MaxEmptyLinesToKeep:       2
+SeparateDefinitionBlocks:  Always

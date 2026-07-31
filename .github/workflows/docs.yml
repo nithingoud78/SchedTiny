@@ -1,0 +1,38 @@
+name: Docs — Generate Doxygen API Documentation
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - "firmware/src/**"
+      - "firmware/include/**"
+      - "tools/doxygen/Doxyfile"
+  workflow_dispatch:
+
+jobs:
+  doxygen:
+    name: Generate and Publish Doxygen (DISABLED)
+    # Disabled for Milestone 3: Project architecture is still actively evolving.
+    # Publishing static HTML to GitHub Pages at this stage clutters deployment history.
+    if: false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Doxygen
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y doxygen graphviz
+
+      - name: Run Doxygen
+        run: doxygen tools/doxygen/Doxyfile
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/api/html
+          destination_dir: api

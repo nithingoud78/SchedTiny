@@ -1,0 +1,159 @@
+# =============================================================================
+# SchedTiny .gitignore
+# STM32 Embedded Research Framework — Apache 2.0
+# =============================================================================
+
+# =============================================================================
+# Build Artifacts
+# =============================================================================
+build/
+**/build/
+*.o
+*.a
+*.elf
+*.bin
+*.hex
+*.map
+*.d
+*.lst
+*.su
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+CTestTestfile.cmake
+
+# =============================================================================
+# IDE and Editor Files
+# =============================================================================
+
+# STM32CubeIDE
+.project
+.cproject
+.settings/
+Debug/
+Release/
+*.launch
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# CLion
+.idea/
+
+# Generic editors
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# =============================================================================
+# Python
+# =============================================================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+*.egg
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+*.ipynb_checkpoints/
+.ipynb_checkpoints
+
+# =============================================================================
+# Large Experimental Data (raw logs can be regenerated)
+# Use results/*/raw/README.md to document regeneration steps
+# =============================================================================
+results/*/raw/*.csv
+results/*/raw/*.txt
+results/*/raw/*.log
+results/*/raw/*.bin
+
+# Processed data and figures ARE committed (they are the paper artifacts)
+!results/*/processed/
+!results/*/figures/
+
+# =============================================================================
+# Datasets (too large for git — use scripts/datasets/download_*.py)
+# =============================================================================
+datasets/kws/data/
+datasets/anomaly/data/
+datasets/har/data/
+datasets/*/raw/
+*.wav
+*.mp3
+
+# =============================================================================
+# Large Binary Model Files (commit .tflite via Git LFS or document source)
+# =============================================================================
+# Uncomment if using Git LFS:
+# *.tflite
+
+# =============================================================================
+# LaTeX Build Artifacts
+# =============================================================================
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.loa
+*.bcf
+*.run.xml
+_minted-*/
+
+# =============================================================================
+# Doxygen Output
+# =============================================================================
+docs/api/html/
+docs/api/latex/
+docs/api/xml/
+
+# =============================================================================
+# ARM Toolchain / OpenOCD
+# =============================================================================
+*.jlink
+*.uvprojx
+*.uvoptx
+JLinkLog.txt
+openocd.log
+
+# =============================================================================
+# OS Files
+# =============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# =============================================================================
+# Secrets and Credentials (never commit)
+# =============================================================================
+.env
+*.pem
+*.key
+secrets.yaml
+credentials.json

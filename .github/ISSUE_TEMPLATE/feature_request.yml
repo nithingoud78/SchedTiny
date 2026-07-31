@@ -1,0 +1,83 @@
+---
+name: Feature Request
+description: Propose a new feature, scheduler policy, benchmark workload, or tool improvement.
+title: "[FEAT] "
+labels: ["enhancement", "triage"]
+assignees:
+  - nithingoud78
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Feature requests must be grounded in research needs.**
+        If you are proposing a new scheduling policy or experiment, please read
+        `docs/RESEARCH_GUIDE.md` and `references/research.md` first.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Scheduler — new policy
+        - Scheduler — new ISR hook
+        - Benchmark — new workload
+        - Benchmark — new metric
+        - HAL — new board support
+        - HAL — new sensor/peripheral
+        - ML — new model
+        - Scripts — new analysis
+        - Scripts — new build automation
+        - Documentation
+        - CI/CD
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Research Motivation
+      description: |
+        What research gap or paper finding motivates this feature?
+        Reference specific sections of `references/research.md` or cite papers.
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      description: Precise description of what you are proposing.
+    validations:
+      required: true
+
+  - type: textarea
+    id: design_sketch
+    attributes:
+      label: Design Sketch (optional)
+      description: |
+        If proposing a firmware API, sketch the function signatures.
+        If proposing an experiment, sketch the config.yaml structure.
+      render: c
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What other approaches did you consider and why did you reject them?
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have read `references/research.md` and this is not a known gap/contribution
+          required: false
+        - label: I have checked existing issues to avoid duplicates
+          required: true
+        - label: This feature is within the project scope defined in `docs/SPEC.md`
+          required: false

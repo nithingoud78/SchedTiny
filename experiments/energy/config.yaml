@@ -1,0 +1,4 @@
+---
+# Energy Config Overrides
+power:
+  ina219_enabled: true

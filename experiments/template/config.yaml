@@ -1,0 +1,53 @@
+---
+# Experiment configuration template.
+# Copy to experiments/EXP-NNN_name/config.yaml and fill in values.
+# This file overrides defaults from configs/scheduler/fp_default.yaml.
+# See docs/EXPERIMENT_GUIDE.md for field descriptions.
+
+experiment:
+  id: "EXP-XXX"
+  name: "short_name"
+  description: "One-sentence description of the experiment"
+
+# -----------------------------------------------------------------------
+# Scheduler configuration (overrides configs/scheduler/)
+# -----------------------------------------------------------------------
+scheduler:
+  policy: FPP            # FPP | RM | EDF
+  tick_rate_hz: 1000     # FreeRTOS tick rate
+
+# -----------------------------------------------------------------------
+# Task configuration (overrides configs/tasks/)
+# -----------------------------------------------------------------------
+tasks:
+  pid:
+    period_ms: 1
+    wcet_budget_us: 200
+    priority: 4           # Higher number = higher priority in FreeRTOS
+    deadline_ms: 1        # Equal to period (implicit deadline)
+
+  sensor:
+    period_ms: 10
+    priority: 3
+
+  infer:
+    period_ms: 40         # 25 Hz inference
+    priority: 2
+    model: kws            # kws | anomaly
+
+# -----------------------------------------------------------------------
+# ISR load generator
+# -----------------------------------------------------------------------
+isr_load:
+  enabled: true
+  source: TIM2            # TIM2 | TIM3
+  rate_hz: 0              # 0 = disabled. Override per run.
+
+# -----------------------------------------------------------------------
+# Benchmark measurement
+# -----------------------------------------------------------------------
+benchmark:
+  samples_per_condition: 1000
+  warmup_samples: 100
+  log_format: json        # json | csv (json recommended)
+  measurement_window_s: 60

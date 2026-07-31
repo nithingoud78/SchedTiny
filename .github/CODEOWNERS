@@ -1,0 +1,68 @@
+# CODEOWNERS
+# Each entry maps a path pattern to the GitHub user(s) responsible for review.
+# When a PR modifies files matching a pattern, the listed owners are
+# automatically requested as reviewers.
+#
+# Syntax: <path-pattern> <@owner> [<@owner2> ...]
+# More specific patterns take precedence over more general ones.
+# Reference: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# =============================================================================
+# Global fallback — lead maintainer reviews everything not covered below
+# =============================================================================
+*                           @nithingoud78
+
+# =============================================================================
+# Core research contributions (highest review bar)
+# =============================================================================
+firmware/src/scheduler/     @nithingoud78
+firmware/src/bench/         @nithingoud78
+docs/SPEC.md                @nithingoud78
+docs/ARCHITECTURE.md        @nithingoud78
+
+# =============================================================================
+# Firmware HAL and board support
+# =============================================================================
+firmware/src/hal/           @nithingoud78
+firmware/boards/            @nithingoud78
+tools/cmake/                @nithingoud78
+
+# =============================================================================
+# TinyML integration
+# =============================================================================
+firmware/src/ml/            @nithingoud78
+models/                     @nithingoud78
+
+# =============================================================================
+# Experiments — every experiment needs lead researcher sign-off
+# =============================================================================
+experiments/                @nithingoud78
+configs/                    @nithingoud78
+
+# =============================================================================
+# Analysis scripts — produce journal figures; require careful review
+# =============================================================================
+scripts/analysis/           @nithingoud78
+results/                    @nithingoud78
+
+# =============================================================================
+# Paper source — requires lead author approval
+# =============================================================================
+papers/                     @nithingoud78
+
+# =============================================================================
+# Third-party dependencies — SHA pin changes require explicit approval
+# =============================================================================
+firmware/third_party/       @nithingoud78
+
+# =============================================================================
+# CI/CD — any changes affect all contributors
+# =============================================================================
+.github/                    @nithingoud78
+ci/                         @nithingoud78
+
+# =============================================================================
+# Documentation — any contributor can review; lead approves merges
+# =============================================================================
+docs/                       @nithingoud78
+*.md                        @nithingoud78

@@ -1,0 +1,31 @@
+---
+# Milestone 3 - Baseline Benchmark Configurations
+# Defines generic workloads used to evaluate scheduler overhead.
+
+tasks:
+  - id: 10
+    name: "SysOverhead"
+    type: "BENCH_WORKLOAD_EMPTY"
+    period_ms: 100
+    priority: 4
+    iterations: 0
+    memory_size: 0
+    delay_us: 0
+
+  - id: 11
+    name: "ControlMath"
+    type: "BENCH_WORKLOAD_MATRIX_MATH"
+    period_ms: 250
+    priority: 3
+    iterations: 50
+    memory_size: 8
+    delay_us: 0
+
+  - id: 12
+    name: "BackgroundBusy"
+    type: "BENCH_WORKLOAD_BUSY_LOOP"
+    period_ms: 1000
+    priority: 1
+    iterations: 100000
+    memory_size: 0
+    delay_us: 0

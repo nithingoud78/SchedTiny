@@ -1,0 +1,58 @@
+---
+# Default Fixed-Priority Preemptive Scheduling Configuration
+# This is the base configuration used by all experiments unless overridden.
+# See docs/SPEC.md REQ-CONFIG-001 for the YAML-driven configuration design.
+# See docs/EXPERIMENT_GUIDE.md for how to override in an experiment.
+
+scheduler:
+  policy: FPP              # Fixed-Priority Preemptive (FreeRTOS default baseline)
+  tick_rate_hz: 1000       # FreeRTOS configTICK_RATE_HZ
+  preemption_enabled: true # configUSE_PREEMPTION
+  time_slicing: false      # configUSE_TIME_SLICING (off for deterministic behavior)
+
+tasks:
+  pid:
+    name: "PID_Control"
+    period_ms: 1           # 1 kHz control loop
+    wcet_budget_us: 200    # Configured WCET budget (from literature: typical PID ~100 µs)
+    priority: 4            # Highest task priority (FreeRTOS: higher number = higher priority)
+    deadline_ms: 1         # Implicit deadline (equal to period)
+    is_hard: true          # Hard deadline task
+
+  sensor:
+    name: "Sensor_Acq"
+    period_ms: 10          # 100 Hz MPU6050 polling
+    wcet_budget_us: 500    # I²C read at 400 kHz, 14 bytes ~= 280 µs
+    priority: 3
+    deadline_ms: 10
+    is_hard: false
+
+  infer:
+    name: "TinyML_Infer"
+    period_ms: 40          # 25 Hz inference (KWS: 1-second window, 25 ms hop)
+    wcet_budget_us: 30000  # ~30 ms budget (conservative; measured in EXP-001)
+    priority: 2
+    deadline_ms: 40
+    is_hard: false         # Soft deadline (miss rate is a metric, not a fault)
+    model: kws
+
+  idle:
+    name: "IDLE"
+    priority: 0            # FreeRTOS idle task (must be lowest)
+
+isr_load:
+  enabled: false           # Disabled by default; enable in experiment configs
+  source: TIM2
+  rate_hz: 0
+
+benchmark:
+  samples_per_condition: 1000
+  warmup_samples: 100
+  log_format: json
+  measurement_window_s: 60
+  log_baud: 115200
+
+power:
+  ina219_enabled: false    # Enable when INA219 is physically connected
+  shunt_ohms: 0.100        # Nominal; update after measuring with multimeter
+  max_expected_ma: 500

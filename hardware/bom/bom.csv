@@ -1,0 +1,14 @@
+Component,Part Number,Quantity,Manufacturer,Source,Approx Cost USD,Notes
+MCU Development Board,NUCLEO-H743ZI2,1,STMicroelectronics,"Mouser, Digi-Key, ST Store",25.00,Primary benchmark target. Cortex-M7 @ 480 MHz.
+MCU Development Board,NUCLEO-F767ZI,1,STMicroelectronics,"Mouser, Digi-Key",22.00,Secondary target. Cortex-M7 @ 216 MHz.
+MCU Development Board,NUCLEO-L496ZG,1,STMicroelectronics,"Mouser, Digi-Key",18.00,Tertiary target. Cortex-M4 @ 80 MHz.
+IMU Sensor Module,MPU6050 breakout,1,InvenSense/TDK,"AliExpress, Amazon",2.00,6-axis accelerometer + gyroscope. I2C 400 kHz.
+Power Monitor Module,INA219 breakout,1,Texas Instruments,"AliExpress, Amazon",3.00,Current/power monitor. I2C. 12-bit ADC.
+Precision Shunt Resistor,0.1 ohm 1% 0.5W,2,Any,"Digi-Key, Mouser",1.00 each,Measure actual resistance before experiments.
+Logic Analyzer,24 MHz 8-channel USB,1,Generic,"Amazon, AliExpress",10.00,Salea clone acceptable. Use Sigrok/Pulseview.
+Full-size Breadboard,830 tie points,1,Any,Any,3.00,
+Jumper Wires M-M,20cm assorted,20,Any,Any,3.00,
+Jumper Wires M-F,20cm assorted,20,Any,Any,3.00,
+USB-B Cable,USB-A to USB-Micro,1,Any,Any,2.00,For NUCLEO ST-LINK connection
+USB-B Cable,USB-A to USB-B,1,Any,Any,2.00,For logic analyzer
+Total,,,,,,~94.00,3 boards; scale down for single-board setup (~$46)

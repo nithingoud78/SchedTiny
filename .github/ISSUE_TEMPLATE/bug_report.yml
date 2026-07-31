@@ -1,0 +1,106 @@
+---
+name: Bug Report
+description: Report a defect in firmware, scripts, or the build system.
+title: "[BUG] "
+labels: ["bug", "triage"]
+assignees:
+  - nithingoud78
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Thank you for reporting a bug.**
+        Please complete this form as thoroughly as possible.
+        Incomplete reports will be closed.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which component of SchedTiny is affected?
+      options:
+        - firmware/scheduler
+        - firmware/bench
+        - firmware/hal
+        - firmware/ml
+        - firmware/tasks
+        - firmware/boards
+        - scripts/analysis
+        - scripts/build
+        - configs
+        - ci
+        - docs
+        - Other (describe in body)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: board
+    attributes:
+      label: Target Board
+      options:
+        - STM32 NUCLEO-H743ZI2
+        - STM32 NUCLEO-F767ZI
+        - STM32 NUCLEO-L496ZG
+        - Host (no hardware involved)
+        - Not applicable
+    validations:
+      required: true
+
+  - type: input
+    id: toolchain_version
+    attributes:
+      label: Toolchain Version
+      description: "arm-none-eabi-gcc --version output"
+      placeholder: "e.g., 12.3.1"
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: |
+        A clear, precise description of what the bug is.
+        Include: what you expected vs. what happened.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: |
+        Exact steps to reproduce the bug.
+        For firmware bugs: include the experiment config and flash command.
+        For script bugs: include the exact command and input data.
+      placeholder: |
+        1. Configure with `cmake -S firmware -B build -DBOARD=nucleo_h743zi2`
+        2. Run `cmake --build build`
+        3. Flash with `python scripts/build/flash.py ...`
+        4. Observe: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Paste the output of relevant version commands.
+      placeholder: |
+        OS: Windows 11 / Ubuntu 24.04
+        CMake: 3.28.1
+        arm-none-eabi-gcc: 12.3.1
+        Python: 3.12.3
+        STM32CubeProgrammer: 2.16.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs or Error Output
+      description: Paste build errors, UART output, or Python tracebacks.
+      render: shell
+    validations:
+      required: false

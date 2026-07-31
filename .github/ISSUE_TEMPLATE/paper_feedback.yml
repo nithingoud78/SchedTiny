@@ -1,0 +1,78 @@
+---
+name: Paper / Reviewer Feedback
+description: |
+  Track reviewer comments, editorial feedback, or post-publication corrections.
+  Use this to maintain a paper revision history as a structured record.
+title: "[PAPER] v1 R1: "
+labels: ["paper", "revision"]
+assignees:
+  - nithingoud78
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Paper Feedback Tracking
+
+        Use this template to track feedback from journal reviewers, conference
+        program committees, or collaborators. Each reviewer comment becomes a
+        trackable issue that can be linked to code/experiment changes.
+
+  - type: input
+    id: submission
+    attributes:
+      label: Submission Reference
+      placeholder: "e.g., IEEE TECS 2026, Manuscript #TECS-2026-0142"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feedback_source
+    attributes:
+      label: Feedback Source
+      options:
+        - Reviewer 1
+        - Reviewer 2
+        - Reviewer 3
+        - Associate Editor
+        - Collaborator
+        - Self-identified (pre-submission)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How critical is this feedback to the paper's acceptance?
+      options:
+        - Major — likely blocks acceptance
+        - Minor — easily addressable
+        - Optional — editorial suggestion
+    validations:
+      required: true
+
+  - type: textarea
+    id: comment
+    attributes:
+      label: Reviewer Comment (verbatim or paraphrased)
+      description: Paste the reviewer comment here.
+    validations:
+      required: true
+
+  - type: textarea
+    id: response_plan
+    attributes:
+      label: Planned Response
+      description: |
+        How will you address this comment?
+        Link to specific experiment IDs, code changes, or doc updates.
+    validations:
+      required: true
+
+  - type: textarea
+    id: related_issues
+    attributes:
+      label: Related Issues or PRs
+      description: Link to any firmware, experiment, or analysis changes needed.
+    validations:
+      required: false

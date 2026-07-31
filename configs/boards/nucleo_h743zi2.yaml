@@ -1,0 +1,29 @@
+---
+# Board-specific constraints and properties for NUCLEO-H743ZI2.
+# These values are used by scripts for binary size checks and
+# experiment validation. Not parsed by firmware directly.
+
+board:
+  name: "NUCLEO-H743ZI2"
+  mcu: "STM32H743ZI"
+  core: "Cortex-M7"
+  clock_hz: 480000000
+  flash_bytes: 2097152    # 2 MB
+  sram_bytes: 1048576     # 1 MB (DTCM + AXI SRAM combined)
+  fpu: "FPv5-D16"         # Double-precision FPU
+
+# Build constraints (used by ci/check_binary_size.py)
+limits:
+  max_flash_utilization: 0.90   # 90% of flash — fail CI if exceeded
+  max_sram_utilization: 0.85   # 85% of SRAM
+
+# Measurement constants (used by scripts/analysis/)
+measurement:
+  cycles_per_us: 480            # SYSCLK / 1e6
+  dwt_overflow_cycles: 4294967295  # 2^32 - 1
+
+# INA219 calibration
+power:
+  shunt_ohms: 0.100             # Nominal; update after measurement
+  max_expected_ma: 500
+  i2c_address: 0x40

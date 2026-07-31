@@ -1,0 +1,3 @@
+---
+# Scheduler Policy Base Config
+# Base is same as fp_default, test runner will swap policies.

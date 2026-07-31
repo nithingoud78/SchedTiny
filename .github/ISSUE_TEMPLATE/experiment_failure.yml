@@ -1,0 +1,111 @@
+---
+name: Experiment Failure Report
+description: |
+  Report an experiment that produced unexpected, irreproducible, or
+  scientifically suspicious results. Use this to capture institutional
+  knowledge about failed experiments.
+title: "[EXP-FAIL] EXP-NNN: "
+labels: ["experiment", "investigation"]
+assignees:
+  - nithingoud78
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Experiment Failure Report
+
+        Failed experiments are **not failures** — they are scientific data.
+        A well-documented failed experiment prevents others from repeating the
+        same mistake and often leads to the most interesting research insights.
+
+        Complete this form carefully. The information here may appear in the
+        paper's limitations section or supplementary material.
+
+  - type: input
+    id: experiment_id
+    attributes:
+      label: Experiment ID
+      placeholder: "EXP-003"
+    validations:
+      required: true
+
+  - type: input
+    id: experiment_name
+    attributes:
+      label: Experiment Name
+      placeholder: "e.g., interrupt_sweep_edf"
+    validations:
+      required: true
+
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: Original Hypothesis
+      description: What did you expect to happen? Copy from experiments/EXP-NNN/README.md.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual_result
+    attributes:
+      label: Actual Result
+      description: What actually happened? Be precise about metrics.
+      placeholder: |
+        Expected: p99 latency < 5 ms at ISR rate 1000 Hz
+        Actual:   p99 latency = 87 ms; DWT counter appears to saturate
+    validations:
+      required: true
+
+  - type: dropdown
+    id: failure_category
+    attributes:
+      label: Failure Category
+      options:
+        - Hardware measurement error (DWT, UART, logic analyzer)
+        - Firmware bug (incorrect implementation)
+        - Configuration error (wrong YAML parameter)
+        - Scheduling analysis error (incorrect WCET estimate)
+        - Toolchain issue (compiler optimization artifact)
+        - Physical hardware issue (board damage, bad connection)
+        - Model behavior unexpected
+        - Reproducibility failure (different results on re-run)
+        - Statistical outlier (environmental noise)
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: investigation
+    attributes:
+      label: Investigation Steps Taken
+      description: What debugging steps have you already tried?
+    validations:
+      required: true
+
+  - type: textarea
+    id: raw_data
+    attributes:
+      label: Raw Data / Logs
+      description: |
+        Paste relevant UART log excerpts or attach the raw CSV.
+        Path to full raw log: results/EXP-NNN/raw/
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: proposed_resolution
+    attributes:
+      label: Proposed Resolution or Next Steps
+      description: What should be changed to address this failure?
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: documentation
+    attributes:
+      label: Documentation
+      options:
+        - label: I have updated `experiments/EXP-NNN/README.md` with the failure details
+        - label: I have preserved the raw data in `results/EXP-NNN/raw/`
+        - label: I have added an entry to `references/open_questions.md`
