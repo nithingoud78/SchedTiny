@@ -33,4 +33,21 @@ add_executable(test_logging measurement/test_logging.c measurement/mock_hal.c)
 target_link_libraries(test_logging measure_lib cmocka)
 add_test(NAME LoggingTest COMMAND test_logging)
 
+# Test executable: Scheduler
+add_executable(test_scheduler 
+    scheduler/test_scheduler.c 
+    scheduler/mock_freertos.c 
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_core.c
+)
+# Define HOST_TEST to disable infinite loops in assertions
+target_compile_definitions(test_scheduler PRIVATE HOST_TEST)
+# Need include paths for FreeRTOS and Scheduler
+target_include_directories(test_scheduler PRIVATE 
+    ${CMAKE_SOURCE_DIR}/../core/scheduler 
+    ${CMAKE_SOURCE_DIR}/../include 
+    scheduler/mock_headers
+)
+target_link_libraries(test_scheduler cmocka)
+add_test(NAME SchedulerTest COMMAND test_scheduler)
+
 enable_testing()

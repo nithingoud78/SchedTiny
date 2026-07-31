@@ -9,12 +9,50 @@
  * @copyright Copyright (c) 2026 SchedTiny Contributors
  */
 
+#include "sched_core.h"
+
 #include "bench_measure.h"
 #include "task.h"
 
 #include "FreeRTOS.h"
 
 #include <stdio.h>
+
+/*-----------------------------------------------------------
+ * SCHEDULER STATE
+ *----------------------------------------------------------*/
+
+static sched_state_t g_sched_state = SCHED_STATE_UNINIT;
+
+SchedStatus_t sched_core_init(void)
+{
+    if (g_sched_state != SCHED_STATE_UNINIT)
+    {
+        return SCHED_ERR_STATE;
+    }
+    g_sched_state = SCHED_STATE_READY;
+    return SCHED_OK;
+}
+
+sched_state_t sched_core_get_state(void)
+{
+    return g_sched_state;
+}
+
+void sched_core_start(void)
+{
+    if (g_sched_state != SCHED_STATE_READY)
+    {
+        vAssertCalled(__FILE__, __LINE__);
+    }
+
+    g_sched_state = SCHED_STATE_RUNNING;
+    vTaskStartScheduler();
+
+    /* Should never reach here if scheduler starts successfully */
+    g_sched_state = SCHED_STATE_HALTED;
+    vAssertCalled(__FILE__, __LINE__);
+}
 
 /*-----------------------------------------------------------
  * STATIC ALLOCATION BUFFERS FOR RTOS DAEMONS
@@ -75,17 +113,25 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 
     // Log fatal error bypassing ring buffer directly if possible, or halt.
     // In production, we trigger a breakpoint or system reset.
+#if defined(__arm__) || defined(__thumb__)
     __asm volatile("bkpt #0");
+#endif
+#ifndef HOST_TEST
     for (;;)
         ;
+#endif
 }
 
 void vApplicationMallocFailedHook(void)
 {
     // Should never execute because configSUPPORT_DYNAMIC_ALLOCATION is 0.
+#if defined(__arm__) || defined(__thumb__)
     __asm volatile("bkpt #0");
+#endif
+#ifndef HOST_TEST
     for (;;)
         ;
+#endif
 }
 
 void vAssertCalled(const char *pcFile, uint32_t ulLine)
@@ -94,7 +140,11 @@ void vAssertCalled(const char *pcFile, uint32_t ulLine)
     (void)ulLine;
 
     // Catch-all assertion trap.
+#if defined(__arm__) || defined(__thumb__)
     __asm volatile("bkpt #0");
+#endif
+#ifndef HOST_TEST
     for (;;)
         ;
+#endif
 }
