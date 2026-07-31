@@ -123,6 +123,7 @@ add_executable(test_task
     scheduler/test_task.c 
     scheduler/mock_freertos.c 
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_task.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_trace.c
 )
 target_compile_definitions(test_task PRIVATE HOST_TEST)
 target_include_directories(test_task PRIVATE 
@@ -198,6 +199,7 @@ add_test(NAME RmsSchedulerTest COMMAND test_rms)
 add_executable(test_mc
     scheduler/test_mc.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_mc.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_trace.c
 )
 target_compile_definitions(test_mc PRIVATE HOST_TEST)
 target_include_directories(test_mc PRIVATE
@@ -222,6 +224,7 @@ add_test(NAME StatsTest COMMAND test_stats)
 add_executable(test_dispatcher
     scheduler/test_dispatcher.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_dispatcher.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_trace.c
 )
 target_compile_definitions(test_dispatcher PRIVATE HOST_TEST)
 target_include_directories(test_dispatcher PRIVATE
