@@ -30,6 +30,11 @@ def compute_stats(group):
         "Power_uW",
         "EnergyPerTask_uJ",
         "EnergyPerCS_uJ",
+        "ModeSwitches",
+        "HIModeEntries",
+        "MaxHIDuration",
+        "DroppedLOTasks",
+        "RecoveredLOTasks",
     ]:
         data = group[col].dropna()
         if len(data) == 0:
@@ -98,7 +103,7 @@ def main():
         f.write("# Algorithm Comparison\n\n")
         f.write(
             "This table summarizes the performance of HPF, EDF, "
-            "and RMS across different workload profiles and seeds.\n\n"
+            "RMS, and MC across different workload profiles and seeds.\n\n"
         )
 
         # To make it readable, we'll pivot to show Mean (± CI) for key metrics
@@ -122,6 +127,8 @@ def main():
             "Throughput",
             "IdleTime",
             "BusyTime",
+            "ModeSwitches",
+            "DroppedLOTasks",
         ]:
             md_table[col] = summary_df.apply(
                 lambda r, c=col: format_metric(r, c), axis=1

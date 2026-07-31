@@ -49,7 +49,8 @@ extern "C"
     {
         SCHED_BENCHMARK_POLICY_HPF = 0,
         SCHED_BENCHMARK_POLICY_EDF,
-        SCHED_BENCHMARK_POLICY_RMS
+        SCHED_BENCHMARK_POLICY_RMS,
+        SCHED_BENCHMARK_POLICY_MC
     } sched_benchmark_policy_t;
 
     /**
@@ -75,6 +76,11 @@ extern "C"
         uint32_t release_time;
         uint32_t priority;
         sched_benchmark_workload_t workload_type;
+
+        /* Mixed Criticality */
+        uint8_t criticality; /* 0 = LO, 1 = HI */
+        uint32_t lo_wcet;
+        uint32_t hi_wcet;
 
         /* Runtime tracking */
         uint32_t remaining_time;
@@ -114,6 +120,13 @@ extern "C"
         uint32_t estimated_power_uw;
         uint32_t energy_per_task_uj;
         uint32_t energy_per_cs_uj;
+
+        /* Mixed Criticality Metrics */
+        uint32_t mode_switches;
+        uint32_t hi_mode_entries;
+        uint32_t max_hi_duration;
+        uint32_t dropped_lo_tasks;
+        uint32_t recovered_lo_tasks;
     } sched_benchmark_results_t;
 
     /**
@@ -124,8 +137,8 @@ extern "C"
         sched_benchmark_task_t tasks[SCHED_BENCHMARK_MAX_TASKS];
         uint32_t task_count;
 
-        sched_benchmark_results_t results[3]; /* One for each policy */
-        bool has_results[3];
+        sched_benchmark_results_t results[4]; /* One for each policy */
+        bool has_results[4];
 
         bool initialized;
     } sched_benchmark_t;

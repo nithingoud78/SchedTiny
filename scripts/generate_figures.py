@@ -32,13 +32,13 @@ def set_style():
 def plot_metric(df, metric, title, ylabel, filename, figures_dir, log_scale=False):
     # We want grouped bar chart: X-axis = Profile, Hue = Algorithm
     profiles = ["small", "medium", "large", "stress"]
-    algorithms = ["HPF", "EDF", "RMS"]
+    algorithms = ["HPF", "EDF", "RMS", "MC"]
 
     # Filter df to ensure order
     df = df[df["Profile"].isin(profiles)]
 
     x = np.arange(len(profiles))
-    width = 0.25
+    width = 0.20
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -56,7 +56,7 @@ def plot_metric(df, metric, title, ylabel, filename, figures_dir, log_scale=Fals
                 means.append(0)
                 errs.append(0)
 
-        offset = (i - 1) * width
+        offset = (i - 1.5) * width
         ax.bar(x + offset, means, width, label=algo, yerr=errs, capsize=5, alpha=0.9)
 
     ax.set_ylabel(ylabel)
@@ -180,6 +180,26 @@ def main():
         "Energy Efficiency per Task",
         "Energy / Task (uJ)",
         "figure10_energy_per_task",
+        figures_dir,
+    )
+
+    # Figure 11: Mode Switches (MC Only)
+    plot_metric(
+        df,
+        "ModeSwitches",
+        "Mixed-Criticality Mode Switches",
+        "Switches (Count)",
+        "figure11_mode_switches",
+        figures_dir,
+    )
+
+    # Figure 12: Dropped LO Tasks (MC Only)
+    plot_metric(
+        df,
+        "DroppedLOTasks",
+        "Mixed-Criticality Dropped LO-Crit Tasks",
+        "Dropped Tasks (Count)",
+        "figure12_dropped_lo_tasks",
         figures_dir,
     )
 
