@@ -6,7 +6,11 @@
 #ifndef SCHED_TRACE_H
 #define SCHED_TRACE_H
 
-#include "sched_types.h"
+#include "schedtiny_status.h"
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C"
