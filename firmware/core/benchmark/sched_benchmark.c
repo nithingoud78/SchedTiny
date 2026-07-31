@@ -14,6 +14,7 @@
 
 #include "sched_dispatcher.h"
 #include "sched_edf.h"
+#include "sched_mc.h"
 #include "sched_policy.h"
 #include "sched_power.h"
 #include "sched_rms.h"
@@ -139,6 +140,39 @@ SchedStatus_t sched_benchmark_load_workload(sched_benchmark_t *ctx,
             t->period         = 0;  // Does not repeat
             t->deadline       = 1000;
         }
+
+        /* Mixed Criticality Initialization */
+        /* ~30% of tasks are HI criticality */
+        t->criticality = (lcg_rand() % 100 < 30) ? 1 : 0;
+
+        /* Execution time is treated as the TRUE execution time in simulation.
+         * For MC, let's say the LO WCET is slightly less than execution time if
+         * it's going to overrun, or more than execution time if it's well-behaved.
+         * To trigger mode switches, we want some HI tasks to overrun their LO WCET.
+         * Let's set lo_wcet to execution_time - (execution_time/4) so it always
+         * overruns, but ONLY if it's HI criticality. Wait, if it always overruns,
+         * we always switch. Let's make it overrun 50% of the time by randomly
+         * setting lo_wcet.
+         */
+        if (t->criticality == 1) /* HI */
+        {
+            if (lcg_rand() % 2 == 0)
+            {
+                /* Overrun: execution_time > lo_wcet */
+                t->lo_wcet = (t->execution_time > 2) ? t->execution_time - 1 : 1;
+            }
+            else
+            {
+                /* No overrun */
+                t->lo_wcet = t->execution_time + 1;
+            }
+            t->hi_wcet = t->execution_time + 5; /* HI WCET is an upper bound */
+        }
+        else                                    /* LO */
+        {
+            t->lo_wcet = t->execution_time + 2;
+            t->hi_wcet = t->lo_wcet;
+        }
     }
 
     return SCHED_OK;
@@ -151,6 +185,7 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
     sched_policy_t hpf_ctx;
     sched_edf_t edf_ctx;
     sched_rms_t rms_ctx;
+    sched_mc_t mc_ctx;
     sched_dispatcher_t disp_ctx;
     sched_stats_t stats_ctx;
 
@@ -185,6 +220,16 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
             if (p == 0)
                 p = 1000; /* Fallback for aperiodic */
             sched_rms_assign_period(&rms_ctx, i, p);
+        }
+    }
+    else if (policy == SCHED_BENCHMARK_POLICY_MC)
+    {
+        sched_mc_init(&mc_ctx);
+        for (uint32_t i = 0; i < ctx->task_count; i++)
+        {
+            sched_benchmark_task_t *t = &ctx->tasks[i];
+            sched_mc_register(&mc_ctx, i, t->criticality == 1 ? SCHED_MC_CRIT_HI : SCHED_MC_CRIT_LO,
+                              t->lo_wcet, t->hi_wcet, t->priority, t->deadline);
         }
     }
 
@@ -248,6 +293,10 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
                 {
                     sched_rms_add_task(&rms_ctx, i);
                 }
+                else if (policy == SCHED_BENCHMARK_POLICY_MC)
+                {
+                    sched_mc_reset_budget(&mc_ctx, i);
+                }
             }
         }
 
@@ -278,6 +327,10 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
         {
             sched_rms_peek_next(&rms_ctx, &next_task);
         }
+        else if (policy == SCHED_BENCHMARK_POLICY_MC)
+        {
+            sched_mc_dispatch(&mc_ctx, &next_task);
+        }
 
         uint32_t old_task = SCHED_DISPATCHER_NO_TASK;
         sched_dispatcher_current_task(&disp_ctx, &old_task);
@@ -296,7 +349,8 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
 #endif
             uint32_t new_switches = 0;
             sched_dispatcher_context_switch_count(&disp_ctx, &new_switches);
-            /* This is a simple approximation; sched_stats can track it internally or we sync it */
+            /* This is a simple approximation; sched_stats can track it internally or
+             * we sync it */
             stats_ctx.data.context_switch_count = new_switches;
         }
 
@@ -339,6 +393,24 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
                     {
                         sched_rms_remove_task(&rms_ctx, current_task);
                     }
+                    else if (policy == SCHED_BENCHMARK_POLICY_MC)
+                    {
+                        // MC tasks don't get "removed" dynamically from queue,
+                        // we just rely on remaining_time == 0 to not execute, but wait,
+                        // sched_mc_dispatch checks if active and not dropped, but it also
+                        // needs to know if it's completed.
+                        // I should mark it dropped or inactive when completed.
+                        // Actually, I can just mark it dropped to stop dispatching it for
+                        // this release.
+                        for (int k = 0; k < SCHED_MC_CAPACITY; k++)
+                        {
+                            if (mc_ctx.registry[k].task_id == current_task)
+                            {
+                                mc_ctx.registry[k].dropped = true;  // hack to simulate completion
+                                break;
+                            }
+                        }
+                    }
 
                     /* Dispatch idle to force picking a new task next tick */
                     sched_dispatcher_idle(&disp_ctx);
@@ -351,6 +423,11 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
         }
 
         sched_dispatcher_tick(&disp_ctx);
+
+        if (policy == SCHED_BENCHMARK_POLICY_MC)
+        {
+            sched_mc_tick(&mc_ctx, current_task, t);
+        }
     }
 
     sched_stats_stop(&stats_ctx, sim_ticks);
@@ -405,6 +482,15 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
         res->energy_per_cs_uj    = pwr.energy_per_cs_uj;
     }
 
+    if (policy == SCHED_BENCHMARK_POLICY_MC)
+    {
+        res->mode_switches      = mc_ctx.mode_switch_count;
+        res->hi_mode_entries    = mc_ctx.hi_mode_entries;
+        res->max_hi_duration    = mc_ctx.max_hi_duration;
+        res->dropped_lo_tasks   = mc_ctx.dropped_lo_tasks;
+        res->recovered_lo_tasks = mc_ctx.recovered_lo_tasks;
+    }
+
     ctx->has_results[policy] = true;
 }
 
@@ -427,7 +513,7 @@ SchedStatus_t sched_benchmark_run(sched_benchmark_t *ctx,
         return SCHED_ERR_STATE;
     }
 
-    if (policy > SCHED_BENCHMARK_POLICY_RMS)
+    if (policy > SCHED_BENCHMARK_POLICY_MC)
     {
         return SCHED_ERR_PARAM;
     }
@@ -456,6 +542,10 @@ SchedStatus_t sched_benchmark_run_all(sched_benchmark_t *ctx, uint32_t sim_ticks
     if (st != SCHED_OK)
         return st;
 
+    st = sched_benchmark_run(ctx, SCHED_BENCHMARK_POLICY_MC, sim_ticks);
+    if (st != SCHED_OK)
+        return st;
+
     return SCHED_OK;
 }
 
@@ -471,7 +561,7 @@ SchedStatus_t sched_benchmark_get_results(const sched_benchmark_t *ctx,
                                           sched_benchmark_policy_t policy,
                                           sched_benchmark_results_t *out_results)
 {
-    if (ctx == NULL || out_results == NULL || policy > SCHED_BENCHMARK_POLICY_RMS)
+    if (ctx == NULL || out_results == NULL || policy > SCHED_BENCHMARK_POLICY_MC)
     {
         return SCHED_ERR_PARAM;
     }
@@ -495,6 +585,8 @@ static const char *policy_to_string(sched_benchmark_policy_t p)
             return "EDF";
         case SCHED_BENCHMARK_POLICY_RMS:
             return "RMS";
+        case SCHED_BENCHMARK_POLICY_MC:
+            return "MC";
         default:
             return "UNKNOWN";
     }
@@ -510,11 +602,13 @@ SchedStatus_t sched_benchmark_export_csv(const sched_benchmark_t *ctx, char *buf
     int offset = snprintf(buffer, max_len,
                           "Algorithm,Tasks,CPUUtilization,Latency,DeadlineMisses,ContextSwitches,"
                           "AvgResponseTime,AvgWaitingTime,Throughput,IdleTime,BusyTime,"
-                          "Energy_uJ,Power_uW,EnergyPerTask_uJ,EnergyPerCS_uJ\n");
+                          "Energy_uJ,Power_uW,EnergyPerTask_uJ,EnergyPerCS_uJ,"
+                          "ModeSwitches,HIModeEntries,MaxHIDuration,DroppedLOTasks,"
+                          "RecoveredLOTasks\n");
     if (offset < 0 || (size_t)offset >= max_len)
         return SCHED_ERR_OVERFLOW;
 
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 4; i++)
     {
         if (ctx->has_results[i])
         {
@@ -523,7 +617,7 @@ SchedStatus_t sched_benchmark_export_csv(const sched_benchmark_t *ctx, char *buf
             float cpu_util = (float)r->cpu_utilization_bp / 100.0f;
             int written    = snprintf(
                 buffer + offset, max_len - offset,
-                "%s,%lu,%.2f,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n",
+                "%s,%lu,%.2f,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n",
                 policy_to_string((sched_benchmark_policy_t)i), (unsigned long)r->total_tasks,
                 cpu_util, (unsigned long)r->avg_scheduling_latency,
                 (unsigned long)r->deadline_misses, (unsigned long)r->context_switches,
@@ -531,7 +625,9 @@ SchedStatus_t sched_benchmark_export_csv(const sched_benchmark_t *ctx, char *buf
                 (unsigned long)r->throughput, (unsigned long)r->idle_time,
                 (unsigned long)r->busy_time, (unsigned long)r->estimated_energy_uj,
                 (unsigned long)r->estimated_power_uw, (unsigned long)r->energy_per_task_uj,
-                (unsigned long)r->energy_per_cs_uj);
+                (unsigned long)r->energy_per_cs_uj, (unsigned long)r->mode_switches,
+                (unsigned long)r->hi_mode_entries, (unsigned long)r->max_hi_duration,
+                (unsigned long)r->dropped_lo_tasks, (unsigned long)r->recovered_lo_tasks);
             if (written < 0 || (size_t)written >= max_len - offset)
                 return SCHED_ERR_OVERFLOW;
             offset += written;
@@ -555,7 +651,7 @@ SchedStatus_t sched_benchmark_export_json(const sched_benchmark_t *ctx,
         return SCHED_ERR_OVERFLOW;
 
     bool first = true;
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 4; i++)
     {
         if (ctx->has_results[i])
         {
@@ -588,7 +684,12 @@ SchedStatus_t sched_benchmark_export_json(const sched_benchmark_t *ctx,
                 "    \"Energy_uJ\": %lu,\n"
                 "    \"Power_uW\": %lu,\n"
                 "    \"EnergyPerTask_uJ\": %lu,\n"
-                "    \"EnergyPerCS_uJ\": %lu\n"
+                "    \"EnergyPerCS_uJ\": %lu,\n"
+                "    \"ModeSwitches\": %lu,\n"
+                "    \"HIModeEntries\": %lu,\n"
+                "    \"MaxHIDuration\": %lu,\n"
+                "    \"DroppedLOTasks\": %lu,\n"
+                "    \"RecoveredLOTasks\": %lu\n"
                 "  }",
                 policy_to_string((sched_benchmark_policy_t)i), (unsigned long)r->total_tasks,
                 cpu_util, (unsigned long)r->avg_scheduling_latency,
@@ -597,7 +698,9 @@ SchedStatus_t sched_benchmark_export_json(const sched_benchmark_t *ctx,
                 (unsigned long)r->throughput, (unsigned long)r->idle_time,
                 (unsigned long)r->busy_time, (unsigned long)r->estimated_energy_uj,
                 (unsigned long)r->estimated_power_uw, (unsigned long)r->energy_per_task_uj,
-                (unsigned long)r->energy_per_cs_uj);
+                (unsigned long)r->energy_per_cs_uj, (unsigned long)r->mode_switches,
+                (unsigned long)r->hi_mode_entries, (unsigned long)r->max_hi_duration,
+                (unsigned long)r->dropped_lo_tasks, (unsigned long)r->recovered_lo_tasks);
             if (written < 0 || (size_t)written >= max_len - offset)
                 return SCHED_ERR_OVERFLOW;
             offset += written;

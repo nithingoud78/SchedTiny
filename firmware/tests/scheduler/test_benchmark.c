@@ -166,10 +166,12 @@ static void test_export_csv(void **state)
     assert_non_null(strstr(buffer,
                            "Algorithm,Tasks,CPUUtilization,Latency,DeadlineMisses,ContextSwitches,"
                            "AvgResponseTime,AvgWaitingTime,Throughput,IdleTime,BusyTime,Energy_uJ,"
-                           "Power_uW,EnergyPerTask_uJ,EnergyPerCS_uJ\n"));
+                           "Power_uW,EnergyPerTask_uJ,EnergyPerCS_uJ,ModeSwitches,"
+                           "HIModeEntries,MaxHIDuration,DroppedLOTasks,RecoveredLOTasks\n"));
     assert_non_null(strstr(buffer, "HPF,10,"));
     assert_non_null(strstr(buffer, "EDF,10,"));
     assert_non_null(strstr(buffer, "RMS,10,"));
+    assert_non_null(strstr(buffer, "MC,10,"));
 }
 
 static void test_export_json(void **state)

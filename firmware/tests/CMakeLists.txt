@@ -114,6 +114,18 @@ target_include_directories(test_rms PRIVATE
 target_link_libraries(test_rms cmocka)
 add_test(NAME RmsSchedulerTest COMMAND test_rms)
 
+# Test executable: MC Scheduler
+add_executable(test_mc
+    scheduler/test_mc.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_mc.c
+)
+target_compile_definitions(test_mc PRIVATE HOST_TEST)
+target_include_directories(test_mc PRIVATE
+    ${CMAKE_SOURCE_DIR}/../include
+)
+target_link_libraries(test_mc cmocka)
+add_test(NAME McSchedulerTest COMMAND test_mc)
+
 # Test executable: Runtime Statistics
 add_executable(test_stats
     scheduler/test_stats.c
@@ -148,6 +160,7 @@ add_executable(test_benchmark
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_policy_hpf.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_edf.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_rms.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_mc.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_ready_queue.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_task.c
     ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_power.c
@@ -158,6 +171,7 @@ target_compile_definitions(test_benchmark PRIVATE
     SCHED_READY_QUEUE_CAPACITY=128
     SCHED_EDF_CAPACITY=128
     SCHED_RMS_CAPACITY=128
+    SCHED_MC_CAPACITY=128
 )
 target_include_directories(test_benchmark PRIVATE
     ${CMAKE_SOURCE_DIR}/../core/scheduler
@@ -176,6 +190,7 @@ add_executable(benchmark_runner
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_policy_hpf.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_edf.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_rms.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_mc.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_ready_queue.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_task.c
     scheduler/stub_freertos.c
@@ -187,6 +202,7 @@ target_compile_definitions(benchmark_runner PRIVATE
     SCHED_READY_QUEUE_CAPACITY=128
     SCHED_EDF_CAPACITY=128
     SCHED_RMS_CAPACITY=128
+    SCHED_MC_CAPACITY=128
 )
 target_include_directories(benchmark_runner PRIVATE
     ${CMAKE_SOURCE_DIR}/../core/scheduler
