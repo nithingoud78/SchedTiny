@@ -92,8 +92,7 @@ add_executable(schedtiny
     core/scheduler/sched_core.c
     core/scheduler/sched_task.c
     core/scheduler/sched_ready_queue.c
-    core/scheduler/sched_isr.c
-    core/scheduler/sched_policy.c
+    core/scheduler/sched_policy_hpf.c
     core/bench/bench_measure.c
     core/bench/bench_log.c
     core/drivers/drv_timer.c

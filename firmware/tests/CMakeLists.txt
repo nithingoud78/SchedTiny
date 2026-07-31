@@ -77,4 +77,17 @@ target_include_directories(test_ready_queue PRIVATE
 target_link_libraries(test_ready_queue cmocka)
 add_test(NAME ReadyQueueTest COMMAND test_ready_queue)
 
+# Test executable: Scheduler Policy
+add_executable(test_scheduler_policy
+    scheduler/test_scheduler_policy.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_policy_hpf.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_ready_queue.c
+)
+target_compile_definitions(test_scheduler_policy PRIVATE HOST_TEST)
+target_include_directories(test_scheduler_policy PRIVATE
+    ${CMAKE_SOURCE_DIR}/../include
+)
+target_link_libraries(test_scheduler_policy cmocka)
+add_test(NAME SchedulerPolicyTest COMMAND test_scheduler_policy)
+
 enable_testing()
