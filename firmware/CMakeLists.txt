@@ -97,6 +97,7 @@ add_executable(schedtiny
     core/scheduler/sched_rms.c
     core/scheduler/sched_mc.c
     core/scheduler/sched_adaptive.c
+    core/scheduler/sched_trace.c
     core/scheduler/sched_dispatcher.c
     core/benchmark/sched_stats.c
     core/benchmark/sched_benchmark.c
@@ -254,6 +255,7 @@ add_executable(stm32_scheduler_demo
     core/scheduler/sched_rms.c
     core/scheduler/sched_mc.c
     core/scheduler/sched_adaptive.c
+    core/scheduler/sched_trace.c
     core/scheduler/sched_dispatcher.c
     core/benchmark/sched_stats.c
     core/benchmark/sched_benchmark.c

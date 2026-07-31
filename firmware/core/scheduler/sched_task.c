@@ -11,6 +11,11 @@
 
 #include "sched_task.h"
 
+#include "sched_trace.h"
+#include "task.h"
+
+#include "FreeRTOS.h"
+
 #include <string.h>
 
 /* Static registry for managing up to SCHED_MAX_TASKS */
@@ -57,6 +62,12 @@ SchedStatus_t sched_task_register(const sched_task_t *config)
             }
 
             g_task_registry[i].state = SCHED_TASK_STATE_READY;
+
+#if SCHED_CONFIG_ENABLE_TRACE
+            sched_trace_record(0, SCHED_TRACE_EVT_TASK_CREATE, config->task_id, 0, 0, 0,
+                               config->priority, 0, 0, 0);
+#endif
+
             return SCHED_OK;
         }
     }
@@ -82,6 +93,10 @@ SchedStatus_t sched_task_remove(uint32_t task_id)
             /* Clear registry entry */
             memset(&g_task_registry[i], 0, sizeof(sched_task_t));
             g_task_registry[i].state = SCHED_TASK_STATE_UNUSED;
+
+#if SCHED_CONFIG_ENABLE_TRACE
+            sched_trace_record(0, SCHED_TRACE_EVT_TASK_DELETE, task_id, 0, 0, 0, 0, 0, 0, 0);
+#endif
 
             return SCHED_OK;
         }

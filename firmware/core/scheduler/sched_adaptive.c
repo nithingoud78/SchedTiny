@@ -21,6 +21,7 @@
 
 #include "sched_adaptive_model.h"
 #include "sched_benchmark.h"
+#include "sched_trace.h"
 
 #include <string.h>
 
@@ -458,6 +459,10 @@ SchedStatus_t sched_adaptive_select_policy(sched_adaptive_t *ctx,
             ctx->active_policy = decision.recommended;
             ctx->stats.total_switches++;
             ctx->ticks_since_last_switch = 0;
+#if SCHED_CONFIG_ENABLE_TRACE
+            sched_trace_record(0, SCHED_TRACE_EVT_ADAPTIVE_POLICY_CHANGE, 0, ctx->active_policy, 0,
+                               0, 0, 0, 0, 0);
+#endif
         }
     }
 

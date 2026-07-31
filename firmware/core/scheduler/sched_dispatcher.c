@@ -12,6 +12,8 @@
 
 #include "sched_dispatcher.h"
 
+#include "sched_trace.h"
+
 #include <string.h>
 
 SchedStatus_t sched_dispatcher_init(sched_dispatcher_t *ctx)
@@ -69,9 +71,29 @@ SchedStatus_t sched_dispatcher_dispatch(sched_dispatcher_t *ctx, uint32_t next_t
     /* Perform a context switch if the task has changed or we were idle */
     if (ctx->is_idle || ctx->current_task_id != next_task_id)
     {
+        uint32_t prev_task = ctx->current_task_id;
+        bool was_idle      = ctx->is_idle;
+
         ctx->context_switch_count++;
         ctx->current_task_id = next_task_id;
         ctx->is_idle         = false;
+
+#if SCHED_CONFIG_ENABLE_TRACE
+        if (was_idle)
+        {
+            sched_trace_record(ctx->tick_count, SCHED_TRACE_EVT_IDLE_EXIT, 0, 0, 0, 0, 0, 0, 0, 0);
+        }
+        else
+        {
+            sched_trace_record(ctx->tick_count, SCHED_TRACE_EVT_TASK_PREEMPT, prev_task, 0, 0, 0, 0,
+                               0, 0, 0);
+        }
+
+        sched_trace_record(ctx->tick_count, SCHED_TRACE_EVT_CONTEXT_SWITCH, next_task_id, 0, 0, 0,
+                           0, 0, 0, 0);
+        sched_trace_record(ctx->tick_count, SCHED_TRACE_EVT_TASK_RESUME, next_task_id, 0, 0, 0, 0,
+                           0, 0, 0);
+#endif
 
         /*
          * Hardware-specific context switch logic (e.g. saving/restoring SP)
@@ -113,6 +135,13 @@ SchedStatus_t sched_dispatcher_idle(sched_dispatcher_t *ctx)
     /* Transition to idle state if not already there */
     if (!ctx->is_idle)
     {
+#if SCHED_CONFIG_ENABLE_TRACE
+        sched_trace_record(ctx->tick_count, SCHED_TRACE_EVT_TASK_PREEMPT, ctx->current_task_id, 0,
+                           0, 0, 0, 0, 0, 0);
+        sched_trace_record(ctx->tick_count, SCHED_TRACE_EVT_CONTEXT_SWITCH, 0, 0, 0, 0, 0, 0, 0, 0);
+        sched_trace_record(ctx->tick_count, SCHED_TRACE_EVT_IDLE_ENTER, 0, 0, 0, 0, 0, 0, 0, 0);
+#endif
+
         ctx->context_switch_count++;
         ctx->current_task_id = SCHED_DISPATCHER_NO_TASK;
         ctx->is_idle         = true;

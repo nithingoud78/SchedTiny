@@ -15,6 +15,7 @@
 #include "sched_benchmark.h"
 #include "sched_dispatcher.h"
 #include "sched_policy.h"
+#include "sched_trace.h"
 
 #include <string.h>
 
@@ -73,6 +74,9 @@ SchedStatus_t sched_fault_inject(sched_fault_type_t fault, uint32_t parameter)
     g_fault_enabled[fault] = true;
     g_fault_params[fault]  = parameter;
     g_fault_stats.faults_injected++;
+#if SCHED_CONFIG_ENABLE_TRACE
+    sched_trace_record(0, SCHED_TRACE_EVT_FAULT_INJECTED, 0, 0, 0, 0, 0, 0, 0, fault);
+#endif
     return SCHED_OK;
 }
 
@@ -125,6 +129,12 @@ void sched_fault_tick_hook(void *benchmark_ctx, uint32_t current_task, uint32_t 
             ctx->tasks[current_task].remaining_time += added_time;
             g_fault_stats.faults_triggered++;
             g_fault_stats.recovery_success++;  // Not necessarily a system crash
+#if SCHED_CONFIG_ENABLE_TRACE
+            sched_trace_record(tick, SCHED_TRACE_EVT_FAULT_TRIGGERED, current_task, 0, 0, 0, 0, 0,
+                               0, SCHED_FAULT_EXECUTION_OVERRUN);
+            sched_trace_record(tick, SCHED_TRACE_EVT_FAULT_RECOVERED, current_task, 0, 0, 0, 0, 0,
+                               0, SCHED_FAULT_EXECUTION_OVERRUN);
+#endif
         }
     }
 
@@ -136,6 +146,10 @@ void sched_fault_tick_hook(void *benchmark_ctx, uint32_t current_task, uint32_t 
         {
             ctx->tasks[current_task].remaining_time = 0;
             g_fault_stats.faults_triggered++;
+#if SCHED_CONFIG_ENABLE_TRACE
+            sched_trace_record(tick, SCHED_TRACE_EVT_FAULT_TRIGGERED, current_task, 0, 0, 0, 0, 0,
+                               0, SCHED_FAULT_RANDOM_FAILURE);
+#endif
         }
     }
 }
@@ -155,6 +169,11 @@ void sched_fault_dispatch_hook(void *benchmark_ctx, uint32_t *next_task)
         {
             *next_task = SCHED_DISPATCHER_NO_TASK;
             g_fault_stats.faults_triggered++;
+#if SCHED_CONFIG_ENABLE_TRACE
+            /* Using 0 for tick as we don't have it directly in this hook */
+            sched_trace_record(0, SCHED_TRACE_EVT_FAULT_TRIGGERED, *next_task, 0, 0, 0, 0, 0, 0,
+                               SCHED_FAULT_DISPATCHER_FAILURE);
+#endif
         }
     }
 

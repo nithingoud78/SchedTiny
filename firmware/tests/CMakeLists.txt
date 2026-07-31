@@ -56,6 +56,7 @@ add_executable(test_fault
     ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_benchmark.c
     ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_stats.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_adaptive.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_trace.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_dispatcher.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_policy_hpf.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_edf.c
@@ -88,6 +89,7 @@ add_executable(test_adaptive
     scheduler/test_adaptive.c
     scheduler/mock_freertos.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_adaptive.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_trace.c
     ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_benchmark.c
     ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_stats.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_dispatcher.c
@@ -121,6 +123,7 @@ add_executable(test_task
     scheduler/test_task.c 
     scheduler/mock_freertos.c 
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_task.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_trace.c
 )
 target_compile_definitions(test_task PRIVATE HOST_TEST)
 target_include_directories(test_task PRIVATE 
@@ -142,6 +145,18 @@ target_include_directories(test_ready_queue PRIVATE
 )
 target_link_libraries(test_ready_queue cmocka)
 add_test(NAME ReadyQueueTest COMMAND test_ready_queue)
+
+# Test executable: Trace Framework
+add_executable(test_trace
+    scheduler/test_trace.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_trace.c
+)
+target_compile_definitions(test_trace PRIVATE HOST_TEST)
+target_include_directories(test_trace PRIVATE
+    ${CMAKE_SOURCE_DIR}/../include
+)
+target_link_libraries(test_trace cmocka)
+add_test(NAME TraceTest COMMAND test_trace)
 
 # Test executable: Scheduler Policy
 add_executable(test_scheduler_policy
@@ -184,6 +199,7 @@ add_test(NAME RmsSchedulerTest COMMAND test_rms)
 add_executable(test_mc
     scheduler/test_mc.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_mc.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_trace.c
 )
 target_compile_definitions(test_mc PRIVATE HOST_TEST)
 target_include_directories(test_mc PRIVATE
@@ -208,6 +224,7 @@ add_test(NAME StatsTest COMMAND test_stats)
 add_executable(test_dispatcher
     scheduler/test_dispatcher.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_dispatcher.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_trace.c
 )
 target_compile_definitions(test_dispatcher PRIVATE HOST_TEST)
 target_include_directories(test_dispatcher PRIVATE
@@ -223,6 +240,7 @@ add_executable(test_benchmark
     ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_benchmark.c
     ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_stats.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_adaptive.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_trace.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_dispatcher.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_policy_hpf.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_edf.c
@@ -255,6 +273,7 @@ add_executable(benchmark_runner
     ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_benchmark.c
     ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_stats.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_adaptive.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_trace.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_dispatcher.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_policy_hpf.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_edf.c

@@ -12,6 +12,8 @@
 
 #include "sched_mc.h"
 
+#include "sched_trace.h"
+
 #include <string.h>
 
 SchedStatus_t sched_mc_init(sched_mc_t *ctx)
@@ -190,6 +192,10 @@ SchedStatus_t sched_mc_set_mode(sched_mc_t *ctx, sched_mc_mode_t mode, uint32_t 
             }
         }
     }
+
+#if SCHED_CONFIG_ENABLE_TRACE
+    sched_trace_record(current_time, SCHED_TRACE_EVT_MC_MODE_SWITCH, 0, 0, 0, 0, 0, 0, 0, mode);
+#endif
 
     return SCHED_OK;
 }

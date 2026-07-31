@@ -21,6 +21,7 @@
 #include "sched_power.h"
 #include "sched_rms.h"
 #include "sched_stats.h"
+#include "sched_trace.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -283,6 +284,10 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
         ctx->tasks[i].last_release      = 0;
     }
 
+#if SCHED_CONFIG_ENABLE_TRACE
+    sched_trace_reset();
+#endif
+
     for (uint32_t t = 0; t < sim_ticks; t++)
     {
         bool invoke_scheduler = false;
@@ -311,7 +316,17 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
                 if (task->remaining_time > 0)
                 {
                     task->deadline_misses++;
+#if SCHED_CONFIG_ENABLE_TRACE
+                    sched_trace_record(t, SCHED_TRACE_EVT_DEADLINE_MISS, i, policy, 0,
+                                       task->criticality, task->priority, task->deadline,
+                                       task->remaining_time, 0);
+#endif
                 }
+
+#if SCHED_CONFIG_ENABLE_TRACE
+                sched_trace_record(t, SCHED_TRACE_EVT_TASK_READY, i, policy, 0, task->criticality,
+                                   task->priority, task->deadline, task->execution_time, 0);
+#endif
 
                 task->remaining_time = task->execution_time;
                 task->last_release   = t;
@@ -354,6 +369,11 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
                 if ((t - task->last_release) == task->deadline)
                 {
                     task->deadline_misses++;
+#if SCHED_CONFIG_ENABLE_TRACE
+                    sched_trace_record(t, SCHED_TRACE_EVT_DEADLINE_MISS, i, policy, 0,
+                                       task->criticality, task->priority, task->deadline,
+                                       task->remaining_time, 0);
+#endif
                 }
             }
         }
@@ -449,6 +469,11 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
                 {
                     /* Task completed */
                     task->completion_count++;
+#if SCHED_CONFIG_ENABLE_TRACE
+                    sched_trace_record(t, SCHED_TRACE_EVT_TASK_COMPLETE, current_task, policy, 0,
+                                       task->criticality, task->priority, task->deadline,
+                                       task->execution_time, 0);
+#endif
                     uint32_t response_time = (t - task->last_release) + 1;
                     task->response_time_sum += response_time;
                     if (response_time > task->response_time_max)
