@@ -126,4 +126,16 @@ target_include_directories(test_stats PRIVATE
 target_link_libraries(test_stats cmocka)
 add_test(NAME StatsTest COMMAND test_stats)
 
+# Test executable: Dispatcher
+add_executable(test_dispatcher
+    scheduler/test_dispatcher.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_dispatcher.c
+)
+target_compile_definitions(test_dispatcher PRIVATE HOST_TEST)
+target_include_directories(test_dispatcher PRIVATE
+    ${CMAKE_SOURCE_DIR}/../include
+)
+target_link_libraries(test_dispatcher cmocka)
+add_test(NAME DispatcherTest COMMAND test_dispatcher)
+
 enable_testing()
