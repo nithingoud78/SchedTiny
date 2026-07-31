@@ -138,4 +138,32 @@ target_include_directories(test_dispatcher PRIVATE
 target_link_libraries(test_dispatcher cmocka)
 add_test(NAME DispatcherTest COMMAND test_dispatcher)
 
+# Test executable: Benchmark Harness
+add_executable(test_benchmark
+    scheduler/test_benchmark.c
+    scheduler/mock_freertos.c
+    ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_benchmark.c
+    ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_stats.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_dispatcher.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_policy_hpf.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_edf.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_rms.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_ready_queue.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_task.c
+)
+target_compile_definitions(test_benchmark PRIVATE 
+    HOST_TEST 
+    SCHED_BENCHMARK_MAX_TASKS=128
+    SCHED_READY_QUEUE_CAPACITY=128
+    SCHED_EDF_CAPACITY=128
+    SCHED_RMS_CAPACITY=128
+)
+target_include_directories(test_benchmark PRIVATE
+    ${CMAKE_SOURCE_DIR}/../core/scheduler
+    ${CMAKE_SOURCE_DIR}/../include
+    scheduler/mock_headers
+)
+target_link_libraries(test_benchmark cmocka)
+add_test(NAME BenchmarkTest COMMAND test_benchmark)
+
 enable_testing()

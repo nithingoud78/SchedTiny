@@ -97,6 +97,7 @@ add_executable(schedtiny
     core/scheduler/sched_rms.c
     core/scheduler/sched_dispatcher.c
     core/benchmark/sched_stats.c
+    core/benchmark/sched_benchmark.c
     core/bench/bench_measure.c
     core/bench/bench_log.c
     core/drivers/drv_timer.c
