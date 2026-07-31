@@ -163,8 +163,7 @@ static void test_export_csv(void **state)
     assert_int_equal(sched_benchmark_export_csv(&g_ctx, buffer, sizeof(buffer)), SCHED_OK);
 
     /* Check basic structure */
-    assert_non_null(
-        strstr(buffer, "Algorithm,Tasks,CPUUtilization,Latency,DeadlineMisses,ContextSwitches\n"));
+    assert_non_null(strstr(buffer, "Algorithm,Tasks,CPUUtilization,Latency,DeadlineMisses,ContextSwitches,AvgResponseTime,AvgWaitingTime,Throughput,IdleTime,BusyTime\n"));
     assert_non_null(strstr(buffer, "HPF,10,"));
     assert_non_null(strstr(buffer, "EDF,10,"));
     assert_non_null(strstr(buffer, "RMS,10,"));
