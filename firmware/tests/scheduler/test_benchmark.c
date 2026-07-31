@@ -159,7 +159,7 @@ static void test_export_csv(void **state)
     sched_benchmark_load_workload(&g_ctx, SCHED_BENCHMARK_PROFILE_SMALL, 100);
     sched_benchmark_run_all(&g_ctx, 500);
 
-    char buffer[1024];
+    char buffer[4096];
     assert_int_equal(sched_benchmark_export_csv(&g_ctx, buffer, sizeof(buffer)), SCHED_OK);
 
     /* Check basic structure */
@@ -169,11 +169,14 @@ static void test_export_csv(void **state)
         "AvgWaitingTime,Throughput,IdleTime,BusyTime,EstimatedEnergy,EstimatedPower,EnergyPerTask,"
         "EnergyPerCS,ModeSwitches,HiModeEntries,MaxHiDuration,DroppedLoTasks,RecoveredLoTasks,"
         "FaultsInjected,FaultsTriggered,RecoverySuccess,RecoveryTime,MissedDeadlinesAfterFault,"
-        "TaskRecoveryCount,TaskRestartCount,SystemAvailability,FaultCoverage\n"));
+        "TaskRecoveryCount,TaskRestartCount,SystemAvailability,FaultCoverage,"
+        "AdaptiveDecisions,AdaptiveSwitches,AdaptiveDecisionLatency,AdaptiveOverheadTicks,"
+        "AdaptiveAccuracy\n"));
     assert_non_null(strstr(buffer, "HPF,10,"));
     assert_non_null(strstr(buffer, "EDF,10,"));
     assert_non_null(strstr(buffer, "RMS,10,"));
     assert_non_null(strstr(buffer, "MC,10,"));
+    assert_non_null(strstr(buffer, "ADAPTIVE,10,"));
 }
 
 static void test_export_json(void **state)
@@ -182,7 +185,7 @@ static void test_export_json(void **state)
     sched_benchmark_load_workload(&g_ctx, SCHED_BENCHMARK_PROFILE_SMALL, 100);
     sched_benchmark_run_all(&g_ctx, 500);
 
-    char buffer[8192];
+    char buffer[16384];
     assert_int_equal(sched_benchmark_export_json(&g_ctx, buffer, sizeof(buffer)), SCHED_OK);
 
     /* Check basic structure */
