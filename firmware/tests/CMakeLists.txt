@@ -65,4 +65,16 @@ target_include_directories(test_task PRIVATE
 target_link_libraries(test_task cmocka)
 add_test(NAME TaskRegistrationTest COMMAND test_task)
 
+# Test executable: Ready Queue
+add_executable(test_ready_queue
+    scheduler/test_ready_queue.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_ready_queue.c
+)
+target_compile_definitions(test_ready_queue PRIVATE HOST_TEST)
+target_include_directories(test_ready_queue PRIVATE
+    ${CMAKE_SOURCE_DIR}/../include
+)
+target_link_libraries(test_ready_queue cmocka)
+add_test(NAME ReadyQueueTest COMMAND test_ready_queue)
+
 enable_testing()

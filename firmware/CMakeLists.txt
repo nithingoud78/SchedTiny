@@ -91,6 +91,7 @@ add_executable(schedtiny
     # Framework Core
     core/scheduler/sched_core.c
     core/scheduler/sched_task.c
+    core/scheduler/sched_ready_queue.c
     core/scheduler/sched_isr.c
     core/scheduler/sched_policy.c
     core/bench/bench_measure.c
