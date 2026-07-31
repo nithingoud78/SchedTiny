@@ -102,4 +102,16 @@ target_include_directories(test_edf PRIVATE
 target_link_libraries(test_edf cmocka)
 add_test(NAME EdfSchedulerTest COMMAND test_edf)
 
+# Test executable: RMS Scheduler
+add_executable(test_rms
+    scheduler/test_rms.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_rms.c
+)
+target_compile_definitions(test_rms PRIVATE HOST_TEST)
+target_include_directories(test_rms PRIVATE
+    ${CMAKE_SOURCE_DIR}/../include
+)
+target_link_libraries(test_rms cmocka)
+add_test(NAME RmsSchedulerTest COMMAND test_rms)
+
 enable_testing()
