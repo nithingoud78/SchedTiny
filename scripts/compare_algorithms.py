@@ -26,6 +26,10 @@ def compute_stats(group):
         "Throughput",
         "IdleTime",
         "BusyTime",
+        "Energy_uJ",
+        "Power_uW",
+        "EnergyPerTask_uJ",
+        "EnergyPerCS_uJ",
     ]:
         data = group[col].dropna()
         if len(data) == 0:

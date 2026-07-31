@@ -15,6 +15,7 @@
 #include "sched_dispatcher.h"
 #include "sched_edf.h"
 #include "sched_policy.h"
+#include "sched_power.h"
 #include "sched_rms.h"
 #include "sched_stats.h"
 
@@ -394,6 +395,16 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
         res->throughput = (res->task_completion_count * 10000) / sim_ticks;
     }
 
+    sched_power_metrics_t pwr;
+    if (sched_power_compute(SCHED_POWER_MODEL_IDLE_ACTIVE, &snap, res->task_completion_count,
+                            &pwr) == SCHED_OK)
+    {
+        res->estimated_energy_uj = pwr.estimated_energy_uj;
+        res->estimated_power_uw  = pwr.estimated_power_uw;
+        res->energy_per_task_uj  = pwr.energy_per_task_uj;
+        res->energy_per_cs_uj    = pwr.energy_per_cs_uj;
+    }
+
     ctx->has_results[policy] = true;
 }
 
@@ -498,7 +509,8 @@ SchedStatus_t sched_benchmark_export_csv(const sched_benchmark_t *ctx, char *buf
 
     int offset = snprintf(buffer, max_len,
                           "Algorithm,Tasks,CPUUtilization,Latency,DeadlineMisses,ContextSwitches,"
-                          "AvgResponseTime,AvgWaitingTime,Throughput,IdleTime,BusyTime\n");
+                          "AvgResponseTime,AvgWaitingTime,Throughput,IdleTime,BusyTime,"
+                          "Energy_uJ,Power_uW,EnergyPerTask_uJ,EnergyPerCS_uJ\n");
     if (offset < 0 || (size_t)offset >= max_len)
         return SCHED_ERR_OVERFLOW;
 
@@ -510,13 +522,16 @@ SchedStatus_t sched_benchmark_export_csv(const sched_benchmark_t *ctx, char *buf
             /* Format CPU util as float percentage (e.g., 8234 bp -> 82.34) */
             float cpu_util = (float)r->cpu_utilization_bp / 100.0f;
             int written    = snprintf(
-                buffer + offset, max_len - offset, "%s,%lu,%.2f,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n",
+                buffer + offset, max_len - offset,
+                "%s,%lu,%.2f,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n",
                 policy_to_string((sched_benchmark_policy_t)i), (unsigned long)r->total_tasks,
                 cpu_util, (unsigned long)r->avg_scheduling_latency,
                 (unsigned long)r->deadline_misses, (unsigned long)r->context_switches,
                 (unsigned long)r->avg_response_time, (unsigned long)r->avg_waiting_time,
                 (unsigned long)r->throughput, (unsigned long)r->idle_time,
-                (unsigned long)r->busy_time);
+                (unsigned long)r->busy_time, (unsigned long)r->estimated_energy_uj,
+                (unsigned long)r->estimated_power_uw, (unsigned long)r->energy_per_task_uj,
+                (unsigned long)r->energy_per_cs_uj);
             if (written < 0 || (size_t)written >= max_len - offset)
                 return SCHED_ERR_OVERFLOW;
             offset += written;
@@ -569,14 +584,20 @@ SchedStatus_t sched_benchmark_export_json(const sched_benchmark_t *ctx,
                 "    \"AvgWaitingTime\": %lu,\n"
                 "    \"Throughput\": %lu,\n"
                 "    \"IdleTime\": %lu,\n"
-                "    \"BusyTime\": %lu\n"
+                "    \"BusyTime\": %lu,\n"
+                "    \"Energy_uJ\": %lu,\n"
+                "    \"Power_uW\": %lu,\n"
+                "    \"EnergyPerTask_uJ\": %lu,\n"
+                "    \"EnergyPerCS_uJ\": %lu\n"
                 "  }",
                 policy_to_string((sched_benchmark_policy_t)i), (unsigned long)r->total_tasks,
                 cpu_util, (unsigned long)r->avg_scheduling_latency,
                 (unsigned long)r->deadline_misses, (unsigned long)r->context_switches,
                 (unsigned long)r->avg_response_time, (unsigned long)r->avg_waiting_time,
                 (unsigned long)r->throughput, (unsigned long)r->idle_time,
-                (unsigned long)r->busy_time);
+                (unsigned long)r->busy_time, (unsigned long)r->estimated_energy_uj,
+                (unsigned long)r->estimated_power_uw, (unsigned long)r->energy_per_task_uj,
+                (unsigned long)r->energy_per_cs_uj);
             if (written < 0 || (size_t)written >= max_len - offset)
                 return SCHED_ERR_OVERFLOW;
             offset += written;

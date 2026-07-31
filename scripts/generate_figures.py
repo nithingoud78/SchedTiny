@@ -163,6 +163,26 @@ def main():
         figures_dir,
     )
 
+    # Figure 9: Energy
+    plot_metric(
+        df,
+        "Energy_uJ",
+        "Estimated Energy Consumption",
+        "Energy (uJ)",
+        "figure9_estimated_energy",
+        figures_dir,
+    )
+
+    # Figure 10: Energy per Task
+    plot_metric(
+        df,
+        "EnergyPerTask_uJ",
+        "Energy Efficiency per Task",
+        "Energy / Task (uJ)",
+        "figure10_energy_per_task",
+        figures_dir,
+    )
+
     print("Figure generation complete.")
 
 
