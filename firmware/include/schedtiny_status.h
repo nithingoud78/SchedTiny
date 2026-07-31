@@ -31,7 +31,8 @@ extern "C"
         SCHED_ERR_OVERFLOW    = 3, /**< Buffer or counter overflow */
         SCHED_ERR_TIMEOUT     = 4, /**< Operation timed out */
         SCHED_ERR_NOT_FOUND   = 5, /**< Resource not found */
-        SCHED_ERR_UNSUPPORTED = 6  /**< Feature not supported or implemented */
+        SCHED_ERR_UNSUPPORTED = 6, /**< Feature not supported or implemented */
+        SCHED_ERR_NO_MEM      = 7  /**< Insufficient memory or registry full */
     } SchedStatus_t;
 
 #ifdef __cplusplus

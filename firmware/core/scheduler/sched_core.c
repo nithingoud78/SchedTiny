@@ -18,6 +18,8 @@
 
 #include <stdio.h>
 
+void vAssertCalled(const char *pcFile, uint32_t ulLine);
+
 /*-----------------------------------------------------------
  * SCHEDULER STATE
  *----------------------------------------------------------*/
