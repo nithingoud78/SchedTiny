@@ -110,6 +110,10 @@ extern "C"
         uint32_t scheduler_invocation_count;
         uint32_t task_execution_count;
         uint32_t throughput; /* Completions per 10000 ticks */
+        uint32_t estimated_energy_uj;
+        uint32_t estimated_power_uw;
+        uint32_t energy_per_task_uj;
+        uint32_t energy_per_cs_uj;
     } sched_benchmark_results_t;
 
     /**

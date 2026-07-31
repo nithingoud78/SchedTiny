@@ -163,7 +163,10 @@ static void test_export_csv(void **state)
     assert_int_equal(sched_benchmark_export_csv(&g_ctx, buffer, sizeof(buffer)), SCHED_OK);
 
     /* Check basic structure */
-    assert_non_null(strstr(buffer, "Algorithm,Tasks,CPUUtilization,Latency,DeadlineMisses,ContextSwitches,AvgResponseTime,AvgWaitingTime,Throughput,IdleTime,BusyTime\n"));
+    assert_non_null(strstr(buffer,
+                           "Algorithm,Tasks,CPUUtilization,Latency,DeadlineMisses,ContextSwitches,"
+                           "AvgResponseTime,AvgWaitingTime,Throughput,IdleTime,BusyTime,Energy_uJ,"
+                           "Power_uW,EnergyPerTask_uJ,EnergyPerCS_uJ\n"));
     assert_non_null(strstr(buffer, "HPF,10,"));
     assert_non_null(strstr(buffer, "EDF,10,"));
     assert_non_null(strstr(buffer, "RMS,10,"));
@@ -175,7 +178,7 @@ static void test_export_json(void **state)
     sched_benchmark_load_workload(&g_ctx, SCHED_BENCHMARK_PROFILE_SMALL, 100);
     sched_benchmark_run_all(&g_ctx, 500);
 
-    char buffer[1024];
+    char buffer[2048];
     assert_int_equal(sched_benchmark_export_json(&g_ctx, buffer, sizeof(buffer)), SCHED_OK);
 
     /* Check basic structure */

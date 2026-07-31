@@ -150,6 +150,7 @@ add_executable(test_benchmark
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_rms.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_ready_queue.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_task.c
+    ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_power.c
 )
 target_compile_definitions(test_benchmark PRIVATE 
     HOST_TEST 
@@ -178,6 +179,7 @@ add_executable(benchmark_runner
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_ready_queue.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_task.c
     scheduler/stub_freertos.c
+    ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_power.c
 )
 target_compile_definitions(benchmark_runner PRIVATE 
     HOST_TEST 
