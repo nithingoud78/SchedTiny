@@ -90,4 +90,16 @@ target_include_directories(test_scheduler_policy PRIVATE
 target_link_libraries(test_scheduler_policy cmocka)
 add_test(NAME SchedulerPolicyTest COMMAND test_scheduler_policy)
 
+# Test executable: EDF Scheduler
+add_executable(test_edf
+    scheduler/test_edf.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_edf.c
+)
+target_compile_definitions(test_edf PRIVATE HOST_TEST)
+target_include_directories(test_edf PRIVATE
+    ${CMAKE_SOURCE_DIR}/../include
+)
+target_link_libraries(test_edf cmocka)
+add_test(NAME EdfSchedulerTest COMMAND test_edf)
+
 enable_testing()
