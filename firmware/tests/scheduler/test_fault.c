@@ -7,8 +7,9 @@
 // clang-format on
 
 #include "sched_benchmark.h"
-#include "sched_fault.h"
 #include "sched_dispatcher.h"
+#include "sched_fault.h"
+
 /* Helper for setup */
 static int setup(void **state)
 {
