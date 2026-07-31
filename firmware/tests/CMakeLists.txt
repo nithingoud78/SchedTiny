@@ -114,4 +114,16 @@ target_include_directories(test_rms PRIVATE
 target_link_libraries(test_rms cmocka)
 add_test(NAME RmsSchedulerTest COMMAND test_rms)
 
+# Test executable: Runtime Statistics
+add_executable(test_stats
+    scheduler/test_stats.c
+    ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_stats.c
+)
+target_compile_definitions(test_stats PRIVATE HOST_TEST)
+target_include_directories(test_stats PRIVATE
+    ${CMAKE_SOURCE_DIR}/../include
+)
+target_link_libraries(test_stats cmocka)
+add_test(NAME StatsTest COMMAND test_stats)
+
 enable_testing()
