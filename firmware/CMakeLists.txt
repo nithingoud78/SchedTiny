@@ -231,3 +231,85 @@ message(STATUS "  Config file: ${CONFIG_FILE}")
 message(STATUS "  Toolchain:   ${CMAKE_C_COMPILER}")
 message(STATUS "======================================")
 message(STATUS "")
+
+# ---------------------------------------------------------------------------
+# STM32 Hardware Demonstration Target
+# ---------------------------------------------------------------------------
+add_executable(stm32_scheduler_demo
+    ${CMAKE_SOURCE_DIR}/../examples/stm32_scheduler_demo/main.c
+    platform/stm32/platform_init.c
+    platform/stm32/platform_timer.c
+    platform/stm32/platform_gpio.c
+    platform/stm32/platform_clock.c
+    # Framework Core
+    core/scheduler/sched_core.c
+    core/scheduler/sched_task.c
+    core/scheduler/sched_ready_queue.c
+    core/scheduler/sched_policy_hpf.c
+    core/scheduler/sched_edf.c
+    core/scheduler/sched_rms.c
+    core/scheduler/sched_dispatcher.c
+    core/benchmark/sched_stats.c
+    core/benchmark/sched_benchmark.c
+    ${GENERATED_CONFIG_C}
+    ${BOARD_STARTUP_FILE}
+)
+
+add_dependencies(stm32_scheduler_demo schedtiny_config_gen)
+
+target_include_directories(stm32_scheduler_demo PRIVATE
+    include/
+    platform/stm32/
+    ${CMAKE_BINARY_DIR}/generated/
+    third_party/tflite-micro/
+    third_party/CMSIS-NN/Include/
+    boards/${BOARD}/
+)
+
+target_compile_definitions(stm32_scheduler_demo PRIVATE
+    ${BOARD_DEFS}
+    USE_HAL_DRIVER
+    STM32
+    $<$<CONFIG:Debug>:SCHEDTINY_DEBUG=1>
+    $<$<CONFIG:Release>:NDEBUG>
+)
+
+target_compile_options(stm32_scheduler_demo PRIVATE
+    ${BOARD_CPU_FLAGS}
+    -Wall
+    -Wextra
+    -Werror
+    -Wno-unused-parameter
+    -ffunction-sections
+    -fdata-sections
+    -fno-common
+    -ffreestanding
+    $<$<CONFIG:Release>:-O2>
+    $<$<CONFIG:Debug>:-Og -g3 -gdwarf-4>
+)
+
+target_link_options(stm32_scheduler_demo PRIVATE
+    -T${BOARD_LINKER_SCRIPT}
+    ${BOARD_CPU_FLAGS}
+    -Wl,--gc-sections
+    -Wl,-Map=${CMAKE_BINARY_DIR}/stm32_scheduler_demo.map
+    -Wl,--print-memory-usage
+    --specs=nano.specs
+    --specs=nosys.specs
+    -lc
+    -lm
+)
+
+target_sources(stm32_scheduler_demo PRIVATE ${FREERTOS_SOURCES})
+target_link_libraries(stm32_scheduler_demo PRIVATE freertos_lib)
+
+add_custom_command(TARGET stm32_scheduler_demo POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:stm32_scheduler_demo>
+            ${CMAKE_BINARY_DIR}/stm32_scheduler_demo.bin
+    COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:stm32_scheduler_demo>
+            ${CMAKE_BINARY_DIR}/stm32_scheduler_demo.hex
+    COMMAND ${CMAKE_SIZE} $<TARGET_FILE:stm32_scheduler_demo>
+    COMMENT "Generating binary and HEX files for stm32_scheduler_demo"
+    VERBATIM
+)
+

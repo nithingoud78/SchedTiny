@@ -21,6 +21,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef STM32
+#include "platform_timer.h"
+#endif
+
 /* Simple LCG for deterministic workloads */
 static uint32_t benchmark_lcg_seed = 1;
 
@@ -279,8 +283,16 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
 
         if (next_task != old_task || invoke_scheduler)
         {
+#ifdef STM32
+            uint32_t start_us = platform_timestamp_us();
+#endif
             sched_stats_record_invocation(&stats_ctx);
             sched_dispatcher_dispatch(&disp_ctx, next_task);
+#ifdef STM32
+            uint32_t end_us = platform_timestamp_us();
+            /* Record actual measured hardware latency */
+            sched_stats_record_latency(&stats_ctx, end_us - start_us);
+#endif
             uint32_t new_switches = 0;
             sched_dispatcher_context_switch_count(&disp_ctx, &new_switches);
             /* This is a simple approximation; sched_stats can track it internally or we sync it */
