@@ -5,11 +5,13 @@
 
 #include "sched_trace.h"
 
-#include <cmocka.h>
-#include <setjmp.h>
+// clang-format off
 #include <stdarg.h>
 #include <stddef.h>
+#include <setjmp.h>
 #include <stdint.h>
+#include <cmocka.h>
+// clang-format on
 
 /* Test basic trace recording */
 static void test_trace_basic(void **state)
