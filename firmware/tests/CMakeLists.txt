@@ -55,6 +55,7 @@ add_executable(test_fault
     scheduler/mock_freertos.c
     ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_benchmark.c
     ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_stats.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_adaptive.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_dispatcher.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_policy_hpf.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_edf.c
@@ -81,6 +82,39 @@ target_include_directories(test_fault PRIVATE
 target_link_libraries(test_fault cmocka)
 add_test(NAME FaultTest COMMAND test_fault)
 add_test(NAME SchedulerTest COMMAND test_scheduler)
+
+# Test executable: Adaptive Scheduler
+add_executable(test_adaptive
+    scheduler/test_adaptive.c
+    scheduler/mock_freertos.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_adaptive.c
+    ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_benchmark.c
+    ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_stats.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_dispatcher.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_policy_hpf.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_edf.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_rms.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_mc.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_ready_queue.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_task.c
+    ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_power.c
+    ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_fault.c
+)
+target_compile_definitions(test_adaptive PRIVATE 
+    HOST_TEST 
+    SCHED_BENCHMARK_MAX_TASKS=128
+    SCHED_READY_QUEUE_CAPACITY=128
+    SCHED_EDF_CAPACITY=128
+    SCHED_RMS_CAPACITY=128
+    SCHED_MC_CAPACITY=128
+)
+target_include_directories(test_adaptive PRIVATE
+    ${CMAKE_SOURCE_DIR}/../core/scheduler
+    ${CMAKE_SOURCE_DIR}/../include
+    scheduler/mock_headers
+)
+target_link_libraries(test_adaptive cmocka)
+add_test(NAME AdaptiveTest COMMAND test_adaptive)
 
 # Test executable: Task Registration
 add_executable(test_task 
@@ -188,6 +222,7 @@ add_executable(test_benchmark
     scheduler/mock_freertos.c
     ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_benchmark.c
     ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_stats.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_adaptive.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_dispatcher.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_policy_hpf.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_edf.c
@@ -219,6 +254,7 @@ add_executable(benchmark_runner
     ${CMAKE_SOURCE_DIR}/../core/benchmark/benchmark_runner.c
     ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_benchmark.c
     ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_stats.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_adaptive.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_dispatcher.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_policy_hpf.c
     ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_edf.c

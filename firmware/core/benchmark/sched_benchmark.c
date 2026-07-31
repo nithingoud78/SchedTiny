@@ -12,6 +12,7 @@
 
 #include "sched_benchmark.h"
 
+#include "sched_adaptive.h"
 #include "sched_dispatcher.h"
 #include "sched_edf.h"
 #include "sched_fault.h"
@@ -190,8 +191,12 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
     sched_edf_t edf_ctx;
     sched_rms_t rms_ctx;
     sched_mc_t mc_ctx;
+    sched_adaptive_t adaptive_ctx;
     sched_dispatcher_t disp_ctx;
     sched_stats_t stats_ctx;
+
+    /* The active sub-policy for adaptive mode */
+    sched_benchmark_policy_t active_sub_policy = SCHED_BENCHMARK_POLICY_HPF;
 
     /* Initialize tracking */
     sched_stats_init(&stats_ctx);
@@ -235,6 +240,34 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
             sched_mc_register(&mc_ctx, i, t->criticality == 1 ? SCHED_MC_CRIT_HI : SCHED_MC_CRIT_LO,
                               t->lo_wcet, t->hi_wcet, t->priority, t->deadline);
         }
+    }
+    else if (policy == SCHED_BENCHMARK_POLICY_ADAPTIVE)
+    {
+        /* Adaptive mode: initialise ALL sub-schedulers and the adaptive engine */
+        sched_adaptive_init(&adaptive_ctx);
+        sched_policy_init(&hpf_ctx);
+        sched_edf_init(&edf_ctx);
+        sched_rms_init(&rms_ctx);
+        sched_mc_init(&mc_ctx);
+
+        for (uint32_t i = 0; i < ctx->task_count; i++)
+        {
+            uint32_t dl = ctx->tasks[i].deadline;
+            if (dl == 0)
+                dl = 1;
+            sched_edf_assign_deadline(&edf_ctx, i, dl);
+
+            uint32_t p = ctx->tasks[i].period;
+            if (p == 0)
+                p = 1000;
+            sched_rms_assign_period(&rms_ctx, i, p);
+
+            sched_benchmark_task_t *t = &ctx->tasks[i];
+            sched_mc_register(&mc_ctx, i, t->criticality == 1 ? SCHED_MC_CRIT_HI : SCHED_MC_CRIT_LO,
+                              t->lo_wcet, t->hi_wcet, t->priority, t->deadline);
+        }
+
+        active_sub_policy = sched_adaptive_get_active_policy(&adaptive_ctx);
     }
 
     /* Reset task runtime states */
@@ -301,6 +334,14 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
                 {
                     sched_mc_reset_budget(&mc_ctx, i);
                 }
+                else if (policy == SCHED_BENCHMARK_POLICY_ADAPTIVE)
+                {
+                    /* Add to ALL sub-schedulers so we can switch freely */
+                    sched_policy_add_task(&hpf_ctx, i, task->priority);
+                    sched_edf_add_task(&edf_ctx, i, t);
+                    sched_rms_add_task(&rms_ctx, i);
+                    sched_mc_reset_budget(&mc_ctx, i);
+                }
             }
         }
 
@@ -334,6 +375,33 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
         else if (policy == SCHED_BENCHMARK_POLICY_MC)
         {
             sched_mc_dispatch(&mc_ctx, &next_task);
+        }
+        else if (policy == SCHED_BENCHMARK_POLICY_ADAPTIVE)
+        {
+            /* Periodically re-evaluate policy selection */
+            if (sched_adaptive_tick(&adaptive_ctx))
+            {
+                sched_adaptive_select_policy(&adaptive_ctx, ctx, active_sub_policy);
+                active_sub_policy = sched_adaptive_get_active_policy(&adaptive_ctx);
+            }
+
+            /* Dispatch using the active sub-policy */
+            if (active_sub_policy == SCHED_BENCHMARK_POLICY_HPF)
+            {
+                sched_policy_peek_next(&hpf_ctx, &next_task);
+            }
+            else if (active_sub_policy == SCHED_BENCHMARK_POLICY_EDF)
+            {
+                sched_edf_peek_next(&edf_ctx, &next_task);
+            }
+            else if (active_sub_policy == SCHED_BENCHMARK_POLICY_RMS)
+            {
+                sched_rms_peek_next(&rms_ctx, &next_task);
+            }
+            else
+            {
+                sched_mc_dispatch(&mc_ctx, &next_task);
+            }
         }
 
         uint32_t old_task = SCHED_DISPATCHER_NO_TASK;
@@ -406,18 +474,26 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
                     }
                     else if (policy == SCHED_BENCHMARK_POLICY_MC)
                     {
-                        // MC tasks don't get "removed" dynamically from queue,
-                        // we just rely on remaining_time == 0 to not execute, but wait,
-                        // sched_mc_dispatch checks if active and not dropped, but it also
-                        // needs to know if it's completed.
-                        // I should mark it dropped or inactive when completed.
-                        // Actually, I can just mark it dropped to stop dispatching it for
-                        // this release.
                         for (int k = 0; k < SCHED_MC_CAPACITY; k++)
                         {
                             if (mc_ctx.registry[k].task_id == current_task)
                             {
-                                mc_ctx.registry[k].dropped = true;  // hack to simulate completion
+                                mc_ctx.registry[k].dropped = true;
+                                break;
+                            }
+                        }
+                    }
+                    else if (policy == SCHED_BENCHMARK_POLICY_ADAPTIVE)
+                    {
+                        /* Remove from ALL sub-schedulers */
+                        sched_policy_remove_task(&hpf_ctx, current_task);
+                        sched_edf_remove_task(&edf_ctx, current_task);
+                        sched_rms_remove_task(&rms_ctx, current_task);
+                        for (int k = 0; k < SCHED_MC_CAPACITY; k++)
+                        {
+                            if (mc_ctx.registry[k].task_id == current_task)
+                            {
+                                mc_ctx.registry[k].dropped = true;
                                 break;
                             }
                         }
@@ -436,6 +512,10 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
         sched_dispatcher_tick(&disp_ctx);
 
         if (policy == SCHED_BENCHMARK_POLICY_MC)
+        {
+            sched_mc_tick(&mc_ctx, current_task, t);
+        }
+        else if (policy == SCHED_BENCHMARK_POLICY_ADAPTIVE)
         {
             sched_mc_tick(&mc_ctx, current_task, t);
         }
@@ -519,6 +599,23 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
     }
 
     ctx->has_results[policy] = true;
+
+    /* Aggregate Adaptive Metrics */
+    if (policy == SCHED_BENCHMARK_POLICY_ADAPTIVE)
+    {
+        sched_adaptive_stats_t astats;
+        if (sched_adaptive_get_stats(&adaptive_ctx, &astats) == SCHED_OK)
+        {
+            res->adaptive_decisions      = astats.total_decisions;
+            res->adaptive_switches       = astats.total_switches;
+            res->adaptive_overhead_ticks = astats.overhead_ticks;
+            if (astats.total_decisions > 0)
+            {
+                res->adaptive_decision_latency = astats.decision_latency / astats.total_decisions;
+            }
+            res->adaptive_accuracy_bp = astats.accuracy_bp;
+        }
+    }
 }
 
 SchedStatus_t sched_benchmark_run(sched_benchmark_t *ctx,
@@ -540,7 +637,7 @@ SchedStatus_t sched_benchmark_run(sched_benchmark_t *ctx,
         return SCHED_ERR_STATE;
     }
 
-    if (policy > SCHED_BENCHMARK_POLICY_MC)
+    if (policy > SCHED_BENCHMARK_POLICY_ADAPTIVE)
     {
         return SCHED_ERR_PARAM;
     }
@@ -573,6 +670,10 @@ SchedStatus_t sched_benchmark_run_all(sched_benchmark_t *ctx, uint32_t sim_ticks
     if (st != SCHED_OK)
         return st;
 
+    st = sched_benchmark_run(ctx, SCHED_BENCHMARK_POLICY_ADAPTIVE, sim_ticks);
+    if (st != SCHED_OK)
+        return st;
+
     return SCHED_OK;
 }
 
@@ -588,7 +689,7 @@ SchedStatus_t sched_benchmark_get_results(const sched_benchmark_t *ctx,
                                           sched_benchmark_policy_t policy,
                                           sched_benchmark_results_t *out_results)
 {
-    if (ctx == NULL || out_results == NULL || policy > SCHED_BENCHMARK_POLICY_MC)
+    if (ctx == NULL || out_results == NULL || policy > SCHED_BENCHMARK_POLICY_ADAPTIVE)
     {
         return SCHED_ERR_PARAM;
     }
@@ -614,6 +715,8 @@ static const char *policy_to_string(sched_benchmark_policy_t p)
             return "RMS";
         case SCHED_BENCHMARK_POLICY_MC:
             return "MC";
+        case SCHED_BENCHMARK_POLICY_ADAPTIVE:
+            return "ADAPTIVE";
         default:
             return "UNKNOWN";
     }
@@ -631,12 +734,14 @@ SchedStatus_t sched_benchmark_export_csv(const sched_benchmark_t *ctx, char *buf
         "AvgWaitingTime,Throughput,IdleTime,BusyTime,EstimatedEnergy,EstimatedPower,EnergyPerTask,"
         "EnergyPerCS,ModeSwitches,HiModeEntries,MaxHiDuration,DroppedLoTasks,RecoveredLoTasks,"
         "FaultsInjected,FaultsTriggered,RecoverySuccess,RecoveryTime,MissedDeadlinesAfterFault,"
-        "TaskRecoveryCount,TaskRestartCount,SystemAvailability,FaultCoverage\n";
+        "TaskRecoveryCount,TaskRestartCount,SystemAvailability,FaultCoverage,"
+        "AdaptiveDecisions,AdaptiveSwitches,AdaptiveDecisionLatency,AdaptiveOverheadTicks,"
+        "AdaptiveAccuracy\n";
     int offset = snprintf(buffer, max_len, "%s", header);
     if (offset < 0 || (size_t)offset >= max_len)
         return SCHED_ERR_OVERFLOW;
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 5; i++)
     {
         if (ctx->has_results[i])
         {
@@ -646,7 +751,7 @@ SchedStatus_t sched_benchmark_export_csv(const sched_benchmark_t *ctx, char *buf
             int written    = snprintf(
                 buffer + offset, max_len - offset,
                 "%s,%lu,%.2f,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%"
-                   "lu,%lu,%lu,%lu,%lu,%lu,%lu,%.2f,%.2f\n",
+                   "lu,%lu,%lu,%lu,%lu,%lu,%lu,%.2f,%.2f,%lu,%lu,%lu,%lu,%.2f\n",
                 policy_to_string((sched_benchmark_policy_t)i), (unsigned long)r->total_tasks,
                 cpu_util, (unsigned long)r->avg_scheduling_latency,
                 (unsigned long)r->deadline_misses, (unsigned long)r->context_switches,
@@ -661,7 +766,10 @@ SchedStatus_t sched_benchmark_export_csv(const sched_benchmark_t *ctx, char *buf
                 (unsigned long)r->recovery_success, (unsigned long)r->recovery_time,
                 (unsigned long)r->missed_deadlines_after_fault,
                 (unsigned long)r->task_recovery_count, (unsigned long)r->task_restart_count,
-                (float)r->system_availability_bp / 100.0f, (float)r->fault_coverage_bp / 100.0f);
+                (float)r->system_availability_bp / 100.0f, (float)r->fault_coverage_bp / 100.0f,
+                (unsigned long)r->adaptive_decisions, (unsigned long)r->adaptive_switches,
+                (unsigned long)r->adaptive_decision_latency,
+                (unsigned long)r->adaptive_overhead_ticks, (float)r->adaptive_accuracy_bp / 100.0f);
             if (written < 0 || (size_t)written >= max_len - offset)
                 return SCHED_ERR_OVERFLOW;
             offset += written;
@@ -685,7 +793,7 @@ SchedStatus_t sched_benchmark_export_json(const sched_benchmark_t *ctx,
         return SCHED_ERR_OVERFLOW;
 
     bool first = true;
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 5; i++)
     {
         if (ctx->has_results[i])
         {
@@ -733,7 +841,12 @@ SchedStatus_t sched_benchmark_export_json(const sched_benchmark_t *ctx,
                 "    \"TaskRecoveryCount\":%lu,\n"
                 "    \"TaskRestartCount\":%lu,\n"
                 "    \"SystemAvailability\":%.2f,\n"
-                "    \"FaultCoverage\":%.2f\n"
+                "    \"FaultCoverage\":%.2f,\n"
+                "    \"AdaptiveDecisions\":%lu,\n"
+                "    \"AdaptiveSwitches\":%lu,\n"
+                "    \"AdaptiveDecisionLatency\":%lu,\n"
+                "    \"AdaptiveOverheadTicks\":%lu,\n"
+                "    \"AdaptiveAccuracy\":%.2f\n"
                 "  }%s",
                 policy_to_string((sched_benchmark_policy_t)i), (unsigned long)r->total_tasks,
                 cpu_util, (unsigned long)r->avg_scheduling_latency,
@@ -750,6 +863,9 @@ SchedStatus_t sched_benchmark_export_json(const sched_benchmark_t *ctx,
                 (unsigned long)r->missed_deadlines_after_fault,
                 (unsigned long)r->task_recovery_count, (unsigned long)r->task_restart_count,
                 (float)r->system_availability_bp / 100.0f, (float)r->fault_coverage_bp / 100.0f,
+                (unsigned long)r->adaptive_decisions, (unsigned long)r->adaptive_switches,
+                (unsigned long)r->adaptive_decision_latency,
+                (unsigned long)r->adaptive_overhead_ticks, (float)r->adaptive_accuracy_bp / 100.0f,
                 is_last ? "" : ",");
             if (written < 0 || (size_t)written >= max_len - offset)
                 return SCHED_ERR_OVERFLOW;

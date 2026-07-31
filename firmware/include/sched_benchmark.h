@@ -50,7 +50,8 @@ extern "C"
         SCHED_BENCHMARK_POLICY_HPF = 0,
         SCHED_BENCHMARK_POLICY_EDF,
         SCHED_BENCHMARK_POLICY_RMS,
-        SCHED_BENCHMARK_POLICY_MC
+        SCHED_BENCHMARK_POLICY_MC,
+        SCHED_BENCHMARK_POLICY_ADAPTIVE
     } sched_benchmark_policy_t;
 
     /**
@@ -138,6 +139,13 @@ extern "C"
         uint32_t task_restart_count;
         uint32_t system_availability_bp;
         uint32_t fault_coverage_bp;
+
+        /* Adaptive Scheduler Metrics */
+        uint32_t adaptive_decisions;        /**< Total decision engine invocations */
+        uint32_t adaptive_switches;         /**< Number of policy switches */
+        uint32_t adaptive_decision_latency; /**< Average decision time in ticks */
+        uint32_t adaptive_overhead_ticks;   /**< Total adaptive overhead */
+        uint32_t adaptive_accuracy_bp;      /**< Prediction accuracy (0–10000) */
     } sched_benchmark_results_t;
 
     /**
@@ -148,8 +156,8 @@ extern "C"
         sched_benchmark_task_t tasks[SCHED_BENCHMARK_MAX_TASKS];
         uint32_t task_count;
 
-        sched_benchmark_results_t results[4]; /* One for each policy */
-        bool has_results[4];
+        sched_benchmark_results_t results[5]; /* One for each policy */
+        bool has_results[5];
 
         bool initialized;
     } sched_benchmark_t;

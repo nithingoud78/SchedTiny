@@ -5,6 +5,7 @@
  */
 
 #include "task.h"
+
 #include "FreeRTOS.h"
 
 void vTaskStartScheduler(void)
@@ -26,7 +27,7 @@ TaskHandle_t xTaskCreateStatic(TaskFunction_t pxTaskCode,
     (void)pvParameters;
     (void)uxPriority;
     (void)puxStackBuffer;
-    
+
     /* Return the pxTaskBuffer casted to TaskHandle_t as a dummy handle */
     return (TaskHandle_t)pxTaskBuffer;
 }
