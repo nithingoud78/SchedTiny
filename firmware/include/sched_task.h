@@ -1,10 +1,10 @@
 /**
  * @file    sched_task.h
- * @brief   SchedTiny Task Registration and Lookup API.
+ * @brief   SchedTiny Task Registration, Lookup, and Priority API.
  *
  * @author  @nithingoud78
  * @date    2026-07-31
- * @version 0.1.0
+ * @version 0.2.0
  *
  * @copyright Copyright (c) 2026 SchedTiny Contributors
  */
@@ -29,6 +29,23 @@ extern "C"
 #define SCHED_MAX_TASKS 8
 #endif
 
+/**
+ * @brief   Minimum valid SchedTiny task priority (lowest).
+ */
+#define SCHED_PRIORITY_MIN (0U)
+
+/**
+ * @brief   Maximum valid SchedTiny task priority (highest).
+ *          Maps to configMAX_PRIORITIES - 1 from FreeRTOSConfig.h.
+ *          Capped here at 31 for portability across all supported boards.
+ */
+#define SCHED_PRIORITY_MAX (31U)
+
+    /**
+     * @brief   Priority level type. Valid range: SCHED_PRIORITY_MIN .. SCHED_PRIORITY_MAX.
+     */
+    typedef uint32_t sched_priority_t;
+
     /**
      * @brief   Task lifecycle states within the SchedTiny registry.
      */
@@ -51,7 +68,7 @@ extern "C"
         TaskFunction_t pxTaskCode;   /**< Task callback function */
         void *pvParameters;          /**< Parameters passed to the task */
         uint32_t ulStackDepth;       /**< Stack depth (words) */
-        UBaseType_t uxPriority;      /**< Task priority */
+        sched_priority_t priority;   /**< SchedTiny-validated task priority */
         StackType_t *puxStackBuffer; /**< Pointer to statically allocated stack */
         StaticTask_t *pxTaskBuffer;  /**< Pointer to statically allocated TCB */
         TaskHandle_t handle;         /**< Assigned FreeRTOS task handle */
@@ -87,6 +104,31 @@ extern "C"
      * @return  SCHED_OK on success.
      */
     SchedStatus_t sched_task_get_all(sched_task_t *out_tasks, uint32_t *count);
+
+    /**
+     * @brief   Set the priority of a registered task.
+     *
+     * Validates that priority is within [SCHED_PRIORITY_MIN, SCHED_PRIORITY_MAX].
+     * Updates both the SchedTiny registry and the live FreeRTOS task.
+     *
+     * @param   task_id  The unique ID of the task.
+     * @param   priority New priority value.
+     * @return  SCHED_OK on success.
+     *          SCHED_ERR_NOT_FOUND if task_id is unknown.
+     *          SCHED_ERR_PARAM if priority is out of range.
+     */
+    SchedStatus_t sched_task_set_priority(uint32_t task_id, sched_priority_t priority);
+
+    /**
+     * @brief   Get the current priority of a registered task.
+     *
+     * @param   task_id      The unique ID of the task.
+     * @param   out_priority Pointer to store the priority value.
+     * @return  SCHED_OK on success.
+     *          SCHED_ERR_NOT_FOUND if task_id is unknown.
+     *          SCHED_ERR_PARAM if out_priority is NULL.
+     */
+    SchedStatus_t sched_task_get_priority(uint32_t task_id, sched_priority_t *out_priority);
 
 #ifdef __cplusplus
 }

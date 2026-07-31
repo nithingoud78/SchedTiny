@@ -1,10 +1,10 @@
 /**
  * @file    sched_task.c
- * @brief   SchedTiny Task Registration and Lookup Implementation.
+ * @brief   SchedTiny Task Registration, Lookup, and Priority Implementation.
  *
  * @author  @nithingoud78
  * @date    2026-07-31
- * @version 0.1.0
+ * @version 0.2.0
  *
  * @copyright Copyright (c) 2026 SchedTiny Contributors
  */
@@ -43,10 +43,10 @@ SchedStatus_t sched_task_register(const sched_task_t *config)
             memcpy(&g_task_registry[i], config, sizeof(sched_task_t));
 
             /* Create task statically */
-            g_task_registry[i].handle =
-                xTaskCreateStatic(config->pxTaskCode, config->name ? config->name : "Task",
-                                  config->ulStackDepth, config->pvParameters, config->uxPriority,
-                                  config->puxStackBuffer, config->pxTaskBuffer);
+            g_task_registry[i].handle = xTaskCreateStatic(
+                config->pxTaskCode, config->name ? config->name : "Task", config->ulStackDepth,
+                config->pvParameters, (UBaseType_t)config->priority, config->puxStackBuffer,
+                config->pxTaskBuffer);
 
             if (g_task_registry[i].handle == NULL)
             {
@@ -129,4 +129,50 @@ SchedStatus_t sched_task_get_all(sched_task_t *out_tasks, uint32_t *count)
 
     *count = found;
     return SCHED_OK;
+}
+
+SchedStatus_t sched_task_set_priority(uint32_t task_id, sched_priority_t priority)
+{
+    if (priority > SCHED_PRIORITY_MAX)
+    {
+        return SCHED_ERR_PARAM;
+    }
+
+    for (uint32_t i = 0; i < SCHED_MAX_TASKS; i++)
+    {
+        if (g_task_registry[i].state != SCHED_TASK_STATE_UNUSED &&
+            g_task_registry[i].task_id == task_id)
+        {
+            g_task_registry[i].priority = priority;
+
+            if (g_task_registry[i].handle != NULL)
+            {
+                vTaskPrioritySet(g_task_registry[i].handle, (UBaseType_t)priority);
+            }
+
+            return SCHED_OK;
+        }
+    }
+
+    return SCHED_ERR_NOT_FOUND;
+}
+
+SchedStatus_t sched_task_get_priority(uint32_t task_id, sched_priority_t *out_priority)
+{
+    if (out_priority == NULL)
+    {
+        return SCHED_ERR_PARAM;
+    }
+
+    for (uint32_t i = 0; i < SCHED_MAX_TASKS; i++)
+    {
+        if (g_task_registry[i].state != SCHED_TASK_STATE_UNUSED &&
+            g_task_registry[i].task_id == task_id)
+        {
+            *out_priority = g_task_registry[i].priority;
+            return SCHED_OK;
+        }
+    }
+
+    return SCHED_ERR_NOT_FOUND;
 }

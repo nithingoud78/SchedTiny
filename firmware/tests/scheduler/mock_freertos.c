@@ -38,3 +38,15 @@ void vTaskDelete(TaskHandle_t xTaskToDelete)
 {
     check_expected(xTaskToDelete);
 }
+
+void vTaskPrioritySet(TaskHandle_t xTask, UBaseType_t uxNewPriority)
+{
+    check_expected(xTask);
+    check_expected(uxNewPriority);
+}
+
+UBaseType_t uxTaskPriorityGet(const TaskHandle_t xTask)
+{
+    (void)xTask;
+    return (UBaseType_t)mock();
+}
