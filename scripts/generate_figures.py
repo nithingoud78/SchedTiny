@@ -57,7 +57,15 @@ def plot_metric(df, metric, title, ylabel, filename, figures_dir, log_scale=Fals
                 errs.append(0)
 
         offset = (i - 1.5) * width
-        ax.bar(x + offset, means, width, label=algo, yerr=errs, capsize=5, alpha=0.9)
+        ax.bar(
+            x + offset,
+            means,
+            width,
+            label=algo,
+            yerr=errs,
+            capsize=5,
+            alpha=0.9,
+        )
 
     ax.set_ylabel(ylabel)
     ax.set_title(title)
@@ -166,7 +174,7 @@ def main():
     # Figure 9: Energy
     plot_metric(
         df,
-        "Energy_uJ",
+        "EstimatedEnergy",
         "Estimated Energy Consumption",
         "Energy (uJ)",
         "figure9_estimated_energy",
@@ -176,7 +184,7 @@ def main():
     # Figure 10: Energy per Task
     plot_metric(
         df,
-        "EnergyPerTask_uJ",
+        "EnergyPerTask",
         "Energy Efficiency per Task",
         "Energy / Task (uJ)",
         "figure10_energy_per_task",
@@ -196,10 +204,40 @@ def main():
     # Figure 12: Dropped LO Tasks (MC Only)
     plot_metric(
         df,
-        "DroppedLOTasks",
+        "DroppedLoTasks",
         "Mixed-Criticality Dropped LO-Crit Tasks",
         "Dropped Tasks (Count)",
         "figure12_dropped_lo_tasks",
+        figures_dir,
+    )
+
+    # Figure 13: Recovery Success
+    plot_metric(
+        df,
+        "RecoverySuccess",
+        "Successful Fault Recoveries",
+        "Recoveries (Count)",
+        "figure13_recovery_success",
+        figures_dir,
+    )
+
+    # Figure 14: System Availability
+    plot_metric(
+        df,
+        "SystemAvailability",
+        "System Availability (after faults)",
+        "Availability (%)",
+        "figure14_system_availability",
+        figures_dir,
+    )
+
+    # Figure 15: Fault Coverage
+    plot_metric(
+        df,
+        "FaultCoverage",
+        "Fault Coverage",
+        "Coverage (%)",
+        "figure15_fault_coverage",
         figures_dir,
     )
 

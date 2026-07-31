@@ -14,6 +14,7 @@
 
 #include "sched_dispatcher.h"
 #include "sched_edf.h"
+#include "sched_fault.h"
 #include "sched_mc.h"
 #include "sched_policy.h"
 #include "sched_power.h"
@@ -30,13 +31,13 @@
 /* Simple LCG for deterministic workloads */
 static uint32_t benchmark_lcg_seed = 1;
 
-static uint32_t lcg_rand(void)
+uint32_t benchmark_lcg_rand(void)
 {
     benchmark_lcg_seed = benchmark_lcg_seed * 1103515245 + 12345;
     return (uint32_t)((benchmark_lcg_seed / 65536) % 32768);
 }
 
-static void lcg_srand(uint32_t seed)
+void benchmark_lcg_srand(uint32_t seed)
 {
     benchmark_lcg_seed = seed;
 }
@@ -50,6 +51,9 @@ SchedStatus_t sched_benchmark_init(sched_benchmark_t *ctx)
 
     memset(ctx, 0, sizeof(sched_benchmark_t));
     ctx->initialized = true;
+
+    /* Initialize fault framework */
+    sched_fault_init();
 
     return SCHED_OK;
 }
@@ -101,7 +105,7 @@ SchedStatus_t sched_benchmark_load_workload(sched_benchmark_t *ctx,
     }
 
     ctx->task_count = count;
-    lcg_srand(seed);
+    benchmark_lcg_srand(seed);
 
     for (uint32_t i = 0; i < count; i++)
     {
@@ -110,40 +114,40 @@ SchedStatus_t sched_benchmark_load_workload(sched_benchmark_t *ctx,
 
         t->task_id = i;
         /* Distribute workload types pseudo-randomly */
-        uint32_t r_type  = lcg_rand() % 4;
+        uint32_t r_type  = benchmark_lcg_rand() % 4;
         t->workload_type = (sched_benchmark_workload_t)r_type;
 
-        t->release_time = lcg_rand() % 50;
-        t->priority     = (lcg_rand() % 8);  // Assuming 8 priority levels
+        t->release_time = benchmark_lcg_rand() % 50;
+        t->priority     = (benchmark_lcg_rand() % 8);  // Assuming 8 priority levels
 
         if (t->workload_type == SCHED_WORKLOAD_PERIODIC)
         {
-            t->execution_time = (lcg_rand() % 10) + 1;
-            t->period         = (lcg_rand() % 50) + 20;
+            t->execution_time = (benchmark_lcg_rand() % 10) + 1;
+            t->period         = (benchmark_lcg_rand() % 50) + 20;
             t->deadline       = t->period;
         }
         else if (t->workload_type == SCHED_WORKLOAD_CPU_BOUND)
         {
-            t->execution_time = (lcg_rand() % 30) + 20;
-            t->period         = (lcg_rand() % 100) + 60;
+            t->execution_time = (benchmark_lcg_rand() % 30) + 20;
+            t->period         = (benchmark_lcg_rand() % 100) + 60;
             t->deadline       = t->period;
         }
         else if (t->workload_type == SCHED_WORKLOAD_DEADLINE_SENSITIVE)
         {
-            t->execution_time = (lcg_rand() % 5) + 1;
-            t->period         = (lcg_rand() % 50) + 20;
-            t->deadline       = t->execution_time + (lcg_rand() % 5);  // Tight deadline
+            t->execution_time = (benchmark_lcg_rand() % 5) + 1;
+            t->period         = (benchmark_lcg_rand() % 50) + 20;
+            t->deadline       = t->execution_time + (benchmark_lcg_rand() % 5);  // Tight deadline
         }
-        else                                                           /* APERIODIC */
+        else                                                                     /* APERIODIC */
         {
-            t->execution_time = (lcg_rand() % 15) + 1;
+            t->execution_time = (benchmark_lcg_rand() % 15) + 1;
             t->period         = 0;  // Does not repeat
             t->deadline       = 1000;
         }
 
         /* Mixed Criticality Initialization */
         /* ~30% of tasks are HI criticality */
-        t->criticality = (lcg_rand() % 100 < 30) ? 1 : 0;
+        t->criticality = (benchmark_lcg_rand() % 100 < 30) ? 1 : 0;
 
         /* Execution time is treated as the TRUE execution time in simulation.
          * For MC, let's say the LO WCET is slightly less than execution time if
@@ -156,7 +160,7 @@ SchedStatus_t sched_benchmark_load_workload(sched_benchmark_t *ctx,
          */
         if (t->criticality == 1) /* HI */
         {
-            if (lcg_rand() % 2 == 0)
+            if (benchmark_lcg_rand() % 2 == 0)
             {
                 /* Overrun: execution_time > lo_wcet */
                 t->lo_wcet = (t->execution_time > 2) ? t->execution_time - 1 : 1;
@@ -357,9 +361,16 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
         uint32_t current_task = SCHED_DISPATCHER_NO_TASK;
         sched_dispatcher_current_task(&disp_ctx, &current_task);
 
+        /* Hook for per-tick faults (e.g. execution overrun, random drop) */
+        sched_fault_tick_hook(ctx, current_task, t);
+
         /* Execute one tick */
-        if (current_task != SCHED_DISPATCHER_NO_TASK)
+        if (next_task != SCHED_DISPATCHER_NO_TASK)
         {
+            sched_fault_dispatch_hook(ctx, &next_task);
+#ifdef STM32
+            uint32_t start_us = platform_timestamp_us();
+#endif
             sched_stats_record_busy_time(&stats_ctx, 1);
             sched_benchmark_task_t *task = &ctx->tasks[current_task];
 
@@ -482,6 +493,7 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
         res->energy_per_cs_uj    = pwr.energy_per_cs_uj;
     }
 
+    /* Aggregate Mixed Criticality Metrics */
     if (policy == SCHED_BENCHMARK_POLICY_MC)
     {
         res->mode_switches      = mc_ctx.mode_switch_count;
@@ -489,6 +501,21 @@ static void run_policy_benchmark(sched_benchmark_t *ctx,
         res->max_hi_duration    = mc_ctx.max_hi_duration;
         res->dropped_lo_tasks   = mc_ctx.dropped_lo_tasks;
         res->recovered_lo_tasks = mc_ctx.recovered_lo_tasks;
+    }
+
+    /* Aggregate Fault Injection Metrics */
+    sched_fault_stats_t fstats;
+    if (sched_fault_statistics(&fstats) == SCHED_OK)
+    {
+        res->faults_injected              = fstats.faults_injected;
+        res->faults_triggered             = fstats.faults_triggered;
+        res->recovery_success             = fstats.recovery_success;
+        res->recovery_time                = fstats.recovery_time;
+        res->missed_deadlines_after_fault = fstats.missed_deadlines_after_fault;
+        res->task_recovery_count          = fstats.task_recovery_count;
+        res->task_restart_count           = fstats.task_restart_count;
+        res->system_availability_bp       = fstats.system_availability;
+        res->fault_coverage_bp            = fstats.fault_coverage;
     }
 
     ctx->has_results[policy] = true;
@@ -599,12 +626,13 @@ SchedStatus_t sched_benchmark_export_csv(const sched_benchmark_t *ctx, char *buf
         return SCHED_ERR_PARAM;
     }
 
-    int offset = snprintf(buffer, max_len,
-                          "Algorithm,Tasks,CPUUtilization,Latency,DeadlineMisses,ContextSwitches,"
-                          "AvgResponseTime,AvgWaitingTime,Throughput,IdleTime,BusyTime,"
-                          "Energy_uJ,Power_uW,EnergyPerTask_uJ,EnergyPerCS_uJ,"
-                          "ModeSwitches,HIModeEntries,MaxHIDuration,DroppedLOTasks,"
-                          "RecoveredLOTasks\n");
+    const char *header =
+        "Algorithm,Tasks,CPUUtilization,Latency,DeadlineMisses,ContextSwitches,AvgResponseTime,"
+        "AvgWaitingTime,Throughput,IdleTime,BusyTime,EstimatedEnergy,EstimatedPower,EnergyPerTask,"
+        "EnergyPerCS,ModeSwitches,HiModeEntries,MaxHiDuration,DroppedLoTasks,RecoveredLoTasks,"
+        "FaultsInjected,FaultsTriggered,RecoverySuccess,RecoveryTime,MissedDeadlinesAfterFault,"
+        "TaskRecoveryCount,TaskRestartCount,SystemAvailability,FaultCoverage\n";
+    int offset = snprintf(buffer, max_len, "%s", header);
     if (offset < 0 || (size_t)offset >= max_len)
         return SCHED_ERR_OVERFLOW;
 
@@ -617,7 +645,8 @@ SchedStatus_t sched_benchmark_export_csv(const sched_benchmark_t *ctx, char *buf
             float cpu_util = (float)r->cpu_utilization_bp / 100.0f;
             int written    = snprintf(
                 buffer + offset, max_len - offset,
-                "%s,%lu,%.2f,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n",
+                "%s,%lu,%.2f,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%"
+                   "lu,%lu,%lu,%lu,%lu,%lu,%lu,%.2f,%.2f\n",
                 policy_to_string((sched_benchmark_policy_t)i), (unsigned long)r->total_tasks,
                 cpu_util, (unsigned long)r->avg_scheduling_latency,
                 (unsigned long)r->deadline_misses, (unsigned long)r->context_switches,
@@ -627,7 +656,12 @@ SchedStatus_t sched_benchmark_export_csv(const sched_benchmark_t *ctx, char *buf
                 (unsigned long)r->estimated_power_uw, (unsigned long)r->energy_per_task_uj,
                 (unsigned long)r->energy_per_cs_uj, (unsigned long)r->mode_switches,
                 (unsigned long)r->hi_mode_entries, (unsigned long)r->max_hi_duration,
-                (unsigned long)r->dropped_lo_tasks, (unsigned long)r->recovered_lo_tasks);
+                (unsigned long)r->dropped_lo_tasks, (unsigned long)r->recovered_lo_tasks,
+                (unsigned long)r->faults_injected, (unsigned long)r->faults_triggered,
+                (unsigned long)r->recovery_success, (unsigned long)r->recovery_time,
+                (unsigned long)r->missed_deadlines_after_fault,
+                (unsigned long)r->task_recovery_count, (unsigned long)r->task_restart_count,
+                (float)r->system_availability_bp / 100.0f, (float)r->fault_coverage_bp / 100.0f);
             if (written < 0 || (size_t)written >= max_len - offset)
                 return SCHED_ERR_OVERFLOW;
             offset += written;
@@ -666,6 +700,7 @@ SchedStatus_t sched_benchmark_export_json(const sched_benchmark_t *ctx,
 
             const sched_benchmark_results_t *r = &ctx->results[i];
             float cpu_util                     = (float)r->cpu_utilization_bp / 100.0f;
+            bool is_last                       = (i == 3);
 
             int written = snprintf(
                 buffer + offset, max_len - offset,
@@ -688,9 +723,18 @@ SchedStatus_t sched_benchmark_export_json(const sched_benchmark_t *ctx,
                 "    \"ModeSwitches\": %lu,\n"
                 "    \"HIModeEntries\": %lu,\n"
                 "    \"MaxHIDuration\": %lu,\n"
-                "    \"DroppedLOTasks\": %lu,\n"
-                "    \"RecoveredLOTasks\": %lu\n"
-                "  }",
+                "    \"DroppedLoTasks\":%lu,\n"
+                "    \"RecoveredLoTasks\":%lu,\n"
+                "    \"FaultsInjected\":%lu,\n"
+                "    \"FaultsTriggered\":%lu,\n"
+                "    \"RecoverySuccess\":%lu,\n"
+                "    \"RecoveryTime\":%lu,\n"
+                "    \"MissedDeadlinesAfterFault\":%lu,\n"
+                "    \"TaskRecoveryCount\":%lu,\n"
+                "    \"TaskRestartCount\":%lu,\n"
+                "    \"SystemAvailability\":%.2f,\n"
+                "    \"FaultCoverage\":%.2f\n"
+                "  }%s",
                 policy_to_string((sched_benchmark_policy_t)i), (unsigned long)r->total_tasks,
                 cpu_util, (unsigned long)r->avg_scheduling_latency,
                 (unsigned long)r->deadline_misses, (unsigned long)r->context_switches,
@@ -700,7 +744,13 @@ SchedStatus_t sched_benchmark_export_json(const sched_benchmark_t *ctx,
                 (unsigned long)r->estimated_power_uw, (unsigned long)r->energy_per_task_uj,
                 (unsigned long)r->energy_per_cs_uj, (unsigned long)r->mode_switches,
                 (unsigned long)r->hi_mode_entries, (unsigned long)r->max_hi_duration,
-                (unsigned long)r->dropped_lo_tasks, (unsigned long)r->recovered_lo_tasks);
+                (unsigned long)r->dropped_lo_tasks, (unsigned long)r->recovered_lo_tasks,
+                (unsigned long)r->faults_injected, (unsigned long)r->faults_triggered,
+                (unsigned long)r->recovery_success, (unsigned long)r->recovery_time,
+                (unsigned long)r->missed_deadlines_after_fault,
+                (unsigned long)r->task_recovery_count, (unsigned long)r->task_restart_count,
+                (float)r->system_availability_bp / 100.0f, (float)r->fault_coverage_bp / 100.0f,
+                is_last ? "" : ",");
             if (written < 0 || (size_t)written >= max_len - offset)
                 return SCHED_ERR_OVERFLOW;
             offset += written;

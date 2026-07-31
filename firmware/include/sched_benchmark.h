@@ -127,6 +127,17 @@ extern "C"
         uint32_t max_hi_duration;
         uint32_t dropped_lo_tasks;
         uint32_t recovered_lo_tasks;
+
+        /* Fault Injection Metrics */
+        uint32_t faults_injected;
+        uint32_t faults_triggered;
+        uint32_t recovery_success;
+        uint32_t recovery_time;
+        uint32_t missed_deadlines_after_fault;
+        uint32_t task_recovery_count;
+        uint32_t task_restart_count;
+        uint32_t system_availability_bp;
+        uint32_t fault_coverage_bp;
     } sched_benchmark_results_t;
 
     /**
@@ -206,8 +217,21 @@ extern "C"
                                               sched_benchmark_results_t *out_results);
 
     /**
+     * @brief   Generate a deterministic random number.
+     * @return  A pseudo-random 32-bit integer.
+     */
+    uint32_t benchmark_lcg_rand(void);
+
+    /**
+     * @brief   Seed the deterministic random number generator.
+     * @param   seed The random seed.
+     */
+    void benchmark_lcg_srand(uint32_t seed);
+
+    /**
      * @brief   Export all gathered results to JSON format.
      * @param   ctx     Pointer to benchmark context.
+
      * @param   buffer  Buffer to write to.
      * @param   max_len Maximum length.
      * @return  SCHED_OK on success.

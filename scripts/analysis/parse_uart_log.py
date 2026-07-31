@@ -74,7 +74,10 @@ def parse_log_line(line: str, line_number: int) -> dict | None:
     try:
         record = json.loads(line)
     except json.JSONDecodeError as e:
-        print(f"WARNING: Line {line_number}: JSON parse error: {e}", file=sys.stderr)
+        print(
+            f"WARNING: Line {line_number}: JSON parse error: {e}",
+            file=sys.stderr,
+        )
         return None
 
     # Validate required fields
