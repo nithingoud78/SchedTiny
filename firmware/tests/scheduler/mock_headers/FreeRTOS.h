@@ -9,6 +9,7 @@
 #define configUSE_TIMERS             1
 
 typedef uint32_t StackType_t;
+typedef uint32_t UBaseType_t;
 
 typedef struct tskTaskControlBlock *TaskHandle_t;
 

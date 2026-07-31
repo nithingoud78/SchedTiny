@@ -50,4 +50,19 @@ target_include_directories(test_scheduler PRIVATE
 target_link_libraries(test_scheduler cmocka)
 add_test(NAME SchedulerTest COMMAND test_scheduler)
 
+# Test executable: Task Registration
+add_executable(test_task 
+    scheduler/test_task.c 
+    scheduler/mock_freertos.c 
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_task.c
+)
+target_compile_definitions(test_task PRIVATE HOST_TEST)
+target_include_directories(test_task PRIVATE 
+    ${CMAKE_SOURCE_DIR}/../core/scheduler 
+    ${CMAKE_SOURCE_DIR}/../include 
+    scheduler/mock_headers
+)
+target_link_libraries(test_task cmocka)
+add_test(NAME TaskRegistrationTest COMMAND test_task)
+
 enable_testing()

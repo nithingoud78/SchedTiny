@@ -1,10 +1,13 @@
 #include "sched_core.h"
 #include "task.h"
 
-#include <cmocka.h>
-#include <setjmp.h>
+// clang-format off
 #include <stdarg.h>
 #include <stddef.h>
+#include <setjmp.h>
+#include <stdint.h>
+#include <cmocka.h>
+// clang-format on
 
 // Note: Test execution order matters because we are testing static state
 // transitions.

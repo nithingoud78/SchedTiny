@@ -2,9 +2,13 @@ name: Lint — Python and C Style Checks
 
 "on":
   push:
-    branches: [main, dev]
+    branches:
+      - main
+      - dev
+      - feature/**
   pull_request:
-    branches: [main, dev]
+    branches:
+      - main
 
 jobs:
   python-lint:
