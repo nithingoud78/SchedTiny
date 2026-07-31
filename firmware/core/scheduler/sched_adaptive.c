@@ -460,7 +460,7 @@ SchedStatus_t sched_adaptive_select_policy(sched_adaptive_t *ctx,
             ctx->stats.total_switches++;
             ctx->ticks_since_last_switch = 0;
 #if SCHED_CONFIG_ENABLE_TRACE
-            sched_trace_record(bench_ctx->dispatcher.tick_count,
+            sched_trace_record(0,
                                SCHED_TRACE_EVT_ADAPTIVE_POLICY_CHANGE, 0, ctx->active_policy, 0, 0,
                                0, 0, 0, 0);
 #endif
