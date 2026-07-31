@@ -17,4 +17,8 @@ TaskHandle_t xTaskCreateStatic(TaskFunction_t pxTaskCode,
 
 void vTaskDelete(TaskHandle_t xTaskToDelete);
 
+void vTaskPrioritySet(TaskHandle_t xTask, UBaseType_t uxNewPriority);
+
+UBaseType_t uxTaskPriorityGet(const TaskHandle_t xTask);
+
 #endif
