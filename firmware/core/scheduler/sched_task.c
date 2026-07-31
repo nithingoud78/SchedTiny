@@ -64,10 +64,8 @@ SchedStatus_t sched_task_register(const sched_task_t *config)
             g_task_registry[i].state = SCHED_TASK_STATE_READY;
 
 #if SCHED_CONFIG_ENABLE_TRACE
-            sched_trace_record(
-                xTaskGetTickCount(), SCHED_TRACE_EVT_TASK_CREATE, config->task_id, 0, /* policy */
-                0,                                                                    /* core_id */
-                config->criticality, config->priority, config->deadline, config->wcet, 0);
+            sched_trace_record(0, SCHED_TRACE_EVT_TASK_CREATE, config->task_id, 0, 0, 0,
+                               config->priority, 0, 0, 0);
 #endif
 
             return SCHED_OK;
@@ -97,8 +95,7 @@ SchedStatus_t sched_task_remove(uint32_t task_id)
             g_task_registry[i].state = SCHED_TASK_STATE_UNUSED;
 
 #if SCHED_CONFIG_ENABLE_TRACE
-            sched_trace_record(xTaskGetTickCount(), SCHED_TRACE_EVT_TASK_DELETE, task_id, 0, 0, 0,
-                               0, 0, 0, 0);
+            sched_trace_record(0, SCHED_TRACE_EVT_TASK_DELETE, task_id, 0, 0, 0, 0, 0, 0, 0);
 #endif
 
             return SCHED_OK;
