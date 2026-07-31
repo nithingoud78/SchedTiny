@@ -166,4 +166,30 @@ target_include_directories(test_benchmark PRIVATE
 target_link_libraries(test_benchmark cmocka)
 add_test(NAME BenchmarkTest COMMAND test_benchmark)
 
+# Standalone executable: Benchmark Runner
+add_executable(benchmark_runner
+    ${CMAKE_SOURCE_DIR}/../core/benchmark/benchmark_runner.c
+    ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_benchmark.c
+    ${CMAKE_SOURCE_DIR}/../core/benchmark/sched_stats.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_dispatcher.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_policy_hpf.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_edf.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_rms.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_ready_queue.c
+    ${CMAKE_SOURCE_DIR}/../core/scheduler/sched_task.c
+    scheduler/stub_freertos.c
+)
+target_compile_definitions(benchmark_runner PRIVATE 
+    HOST_TEST 
+    SCHED_BENCHMARK_MAX_TASKS=128
+    SCHED_READY_QUEUE_CAPACITY=128
+    SCHED_EDF_CAPACITY=128
+    SCHED_RMS_CAPACITY=128
+)
+target_include_directories(benchmark_runner PRIVATE
+    ${CMAKE_SOURCE_DIR}/../core/scheduler
+    ${CMAKE_SOURCE_DIR}/../include
+    scheduler/mock_headers
+)
+
 enable_testing()

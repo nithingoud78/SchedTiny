@@ -484,8 +484,9 @@ SchedStatus_t sched_benchmark_export_csv(const sched_benchmark_t *ctx, char *buf
         return SCHED_ERR_PARAM;
     }
 
-    int offset = snprintf(
-        buffer, max_len, "Algorithm,Tasks,CPUUtilization,Latency,DeadlineMisses,ContextSwitches\n");
+    int offset = snprintf(buffer, max_len,
+                          "Algorithm,Tasks,CPUUtilization,Latency,DeadlineMisses,ContextSwitches,"
+                          "AvgResponseTime,AvgWaitingTime,Throughput,IdleTime,BusyTime\n");
     if (offset < 0 || (size_t)offset >= max_len)
         return SCHED_ERR_OVERFLOW;
 
@@ -497,10 +498,13 @@ SchedStatus_t sched_benchmark_export_csv(const sched_benchmark_t *ctx, char *buf
             /* Format CPU util as float percentage (e.g., 8234 bp -> 82.34) */
             float cpu_util = (float)r->cpu_utilization_bp / 100.0f;
             int written    = snprintf(
-                buffer + offset, max_len - offset, "%s,%lu,%.2f,%lu,%lu,%lu\n",
+                buffer + offset, max_len - offset, "%s,%lu,%.2f,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu\n",
                 policy_to_string((sched_benchmark_policy_t)i), (unsigned long)r->total_tasks,
                 cpu_util, (unsigned long)r->avg_scheduling_latency,
-                (unsigned long)r->deadline_misses, (unsigned long)r->context_switches);
+                (unsigned long)r->deadline_misses, (unsigned long)r->context_switches,
+                (unsigned long)r->avg_response_time, (unsigned long)r->avg_waiting_time,
+                (unsigned long)r->throughput, (unsigned long)r->idle_time,
+                (unsigned long)r->busy_time);
             if (written < 0 || (size_t)written >= max_len - offset)
                 return SCHED_ERR_OVERFLOW;
             offset += written;
@@ -548,11 +552,19 @@ SchedStatus_t sched_benchmark_export_json(const sched_benchmark_t *ctx,
                 "    \"CPUUtilization\": %.2f,\n"
                 "    \"Latency\": %lu,\n"
                 "    \"DeadlineMisses\": %lu,\n"
-                "    \"ContextSwitches\": %lu\n"
+                "    \"ContextSwitches\": %lu,\n"
+                "    \"AvgResponseTime\": %lu,\n"
+                "    \"AvgWaitingTime\": %lu,\n"
+                "    \"Throughput\": %lu,\n"
+                "    \"IdleTime\": %lu,\n"
+                "    \"BusyTime\": %lu\n"
                 "  }",
                 policy_to_string((sched_benchmark_policy_t)i), (unsigned long)r->total_tasks,
                 cpu_util, (unsigned long)r->avg_scheduling_latency,
-                (unsigned long)r->deadline_misses, (unsigned long)r->context_switches);
+                (unsigned long)r->deadline_misses, (unsigned long)r->context_switches,
+                (unsigned long)r->avg_response_time, (unsigned long)r->avg_waiting_time,
+                (unsigned long)r->throughput, (unsigned long)r->idle_time,
+                (unsigned long)r->busy_time);
             if (written < 0 || (size_t)written >= max_len - offset)
                 return SCHED_ERR_OVERFLOW;
             offset += written;

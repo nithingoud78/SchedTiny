@@ -176,3 +176,9 @@ lint_output.txt
 
 # Generated artifacts
 generated/
+
+# Phase 11 - Do not commit generated experiment artifacts
+benchmark/outputs/
+results/
+figures/
+paper/
