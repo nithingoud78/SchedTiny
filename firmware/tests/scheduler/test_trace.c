@@ -18,7 +18,10 @@ static void test_trace_basic(void **state)
 {
     (void)state;
 
-    sched_trace_reset();
+    if (sched_trace_init() != SCHED_OK)
+    {
+        sched_trace_reset();
+    }
 
     sched_trace_context_t *ctx = sched_trace_get_context();
     assert_int_equal(ctx->count, 0);
@@ -41,7 +44,10 @@ static void test_trace_wrap(void **state)
 {
     (void)state;
 
-    sched_trace_reset();
+    if (sched_trace_init() != SCHED_OK)
+    {
+        sched_trace_reset();
+    }
 
     /* Fill buffer exactly */
     for (int i = 0; i < SCHED_TRACE_BUFFER_SIZE; i++)
