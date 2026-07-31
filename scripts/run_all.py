@@ -14,7 +14,13 @@ def build_runner(root_dir: Path) -> Path:
             ["cmake", "-S", str(tests_dir), "-B", str(build_dir)], check=True
         )
         subprocess.run(
-            ["cmake", "--build", str(build_dir), "--target", "benchmark_runner"],
+            [
+                "cmake",
+                "--build",
+                str(build_dir),
+                "--target",
+                "benchmark_runner",
+            ],
             check=True,
         )
     except subprocess.CalledProcessError as e:

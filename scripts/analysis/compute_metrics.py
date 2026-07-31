@@ -157,7 +157,7 @@ def compute_deadline_miss_rate(df: pd.DataFrame) -> dict:
         results[f"task_{task_id}"] = {
             "total_executions": total,
             "miss_count": misses,
-            "miss_rate_percent": float(misses / total * 100) if total > 0 else 0.0,
+            "miss_rate_percent": (float(misses / total * 100) if total > 0 else 0.0),
         }
 
     return results
@@ -209,7 +209,10 @@ def parse_args() -> argparse.Namespace:
         "--input", type=Path, required=True, help="Path to parsed UART log CSV"
     )
     parser.add_argument(
-        "--output", type=Path, required=True, help="Path to output metrics JSON file"
+        "--output",
+        type=Path,
+        required=True,
+        help="Path to output metrics JSON file",
     )
     parser.add_argument(
         "--sysclk_hz",

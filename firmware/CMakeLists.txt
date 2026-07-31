@@ -100,6 +100,7 @@ add_executable(schedtiny
     core/benchmark/sched_stats.c
     core/benchmark/sched_benchmark.c
     core/benchmark/sched_power.c
+    core/benchmark/sched_fault.c
     core/bench/bench_measure.c
     core/bench/bench_log.c
     core/drivers/drv_timer.c

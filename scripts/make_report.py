@@ -54,6 +54,16 @@ def main():
             ("Figure 6: Waiting Time", "figure6_waiting_time.png"),
             ("Figure 7: Response Time", "figure7_response_time.png"),
             ("Figure 8: Throughput", "figure8_throughput.png"),
+            ("Figure 9: Estimated Energy", "figure9_estimated_energy.png"),
+            ("Figure 10: Energy per Task", "figure10_energy_per_task.png"),
+            ("Figure 11: Mode Switches", "figure11_mode_switches.png"),
+            ("Figure 12: Dropped LO Tasks", "figure12_dropped_lo_tasks.png"),
+            ("Figure 13: Recovery Success", "figure13_recovery_success.png"),
+            (
+                "Figure 14: System Availability",
+                "figure14_system_availability.png",
+            ),
+            ("Figure 15: Fault Coverage", "figure15_fault_coverage.png"),
         ]
 
         for title, filename in figs:

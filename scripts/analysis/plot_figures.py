@@ -219,7 +219,10 @@ def main() -> int:
     args = parse_args()
 
     if not args.metrics.exists():
-        print(f"ERROR: Metrics directory not found: {args.metrics}", file=sys.stderr)
+        print(
+            f"ERROR: Metrics directory not found: {args.metrics}",
+            file=sys.stderr,
+        )
         return 1
 
     args.output.mkdir(parents=True, exist_ok=True)
@@ -228,7 +231,8 @@ def main() -> int:
     metric_files = sorted(args.metrics.glob("metrics_*.json"))
     if not metric_files:
         print(
-            f"ERROR: No metrics_*.json files found in {args.metrics}", file=sys.stderr
+            f"ERROR: No metrics_*.json files found in {args.metrics}",
+            file=sys.stderr,
         )
         return 1
 
