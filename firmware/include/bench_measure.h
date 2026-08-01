@@ -23,6 +23,7 @@
 #ifndef SCHEDTINY_BENCH_MEASURE_H
 #define SCHEDTINY_BENCH_MEASURE_H
 
+#include "bench_hal.h"
 #include "schedtiny_status.h"
 
 #include <stdbool.h>
@@ -45,15 +46,19 @@ extern "C"
      */
     typedef enum
     {
-        BENCH_EV_TASK_START    = 0, /**< Task execution started */
-        BENCH_EV_TASK_END      = 1, /**< Task execution ended */
-        BENCH_EV_INFER_START   = 2, /**< TFLM inference started */
-        BENCH_EV_INFER_END     = 3, /**< TFLM inference ended */
-        BENCH_EV_ISR_ENTRY     = 4, /**< ISR entered (source in val field) */
-        BENCH_EV_ISR_EXIT      = 5, /**< ISR exited */
-        BENCH_EV_DEADLINE_MISS = 6, /**< Task missed its deadline */
-        BENCH_EV_WINDOW_START  = 7, /**< Measurement window start marker */
-        BENCH_EV_WINDOW_END    = 8, /**< Measurement window end marker */
+        BENCH_EV_TASK_START           = 0,  /**< Task execution started */
+        BENCH_EV_TASK_END             = 1,  /**< Task execution ended */
+        BENCH_EV_INFER_START          = 2,  /**< TFLM inference started */
+        BENCH_EV_INFER_END            = 3,  /**< TFLM inference ended */
+        BENCH_EV_ISR_ENTRY            = 4,  /**< ISR entered (source in val field) */
+        BENCH_EV_ISR_EXIT             = 5,  /**< ISR exited */
+        BENCH_EV_DEADLINE_MISS        = 6,  /**< Task missed its deadline */
+        BENCH_EV_WINDOW_START         = 7,  /**< Measurement window start marker */
+        BENCH_EV_WINDOW_END           = 8,  /**< Measurement window end marker */
+        BENCH_EV_SCHEDULER_START      = 9,  /**< Scheduler invocation started */
+        BENCH_EV_SCHEDULER_END        = 10, /**< Scheduler invocation ended */
+        BENCH_EV_FAULT_RECOVERY_START = 11, /**< Fault recovery started */
+        BENCH_EV_FAULT_RECOVERY_END   = 12, /**< Fault recovery ended */
     } BenchEvent_t;
 
     /**
