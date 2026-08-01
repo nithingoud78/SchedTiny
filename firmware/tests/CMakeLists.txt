@@ -23,6 +23,11 @@ add_executable(test_timer measurement/test_timer.c measurement/mock_hal.c)
 target_link_libraries(test_timer measure_lib cmocka)
 add_test(NAME TimerTest COMMAND test_timer)
 
+# Test executable: HAL configuration
+add_executable(test_hal scheduler/test_hal.c measurement/mock_hal.c)
+target_link_libraries(test_hal measure_lib cmocka)
+add_test(NAME HalTest COMMAND test_hal)
+
 # Test executable: Ring Buffer
 add_executable(test_ring_buffer measurement/test_ring_buffer.c measurement/mock_hal.c)
 target_link_libraries(test_ring_buffer measure_lib cmocka)

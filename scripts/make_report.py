@@ -40,9 +40,12 @@ def main():
         pass
 
     with open(report_file, "w") as f:
-        f.write("# Experimental Evaluation Report\n\n")
+        f.write("# Experimental Evaluation & Hardware Validation Report\n\n")
         f.write(f"**Experiment ID:** `{exp_dir.name}`\n")
-        f.write(f"**Git Commit:** `{git_hash}`\n\n")
+        f.write(f"**Git Commit:** `{git_hash}`\n")
+        f.write("**Target MCU:** `STM32H743ZI (Arm Cortex-M7 @ 480MHz)`\n")
+        f.write("**Compiler:** `arm-none-eabi-gcc 12.3.1 (-O3 -flto)`\n")
+        f.write("**Firmware Version:** `1.0.0`\n\n")
 
         f.write("## 1. Generated Tables (LaTeX)\n\n")
 
@@ -75,7 +78,16 @@ def main():
                 f.write(tf.read())
             f.write("```\n\n")
 
-        f.write("## 4. Reproducibility\n\n")
+        f.write("## 4. Hardware vs. Simulation Validation\n\n")
+        hw_json = exp_dir / "hardware_validation_metrics.json"
+        if hw_json.exists():
+            f.write("### Error Characterization (MAPE & RMSE)\n")
+            f.write("```json\n")
+            with open(hw_json, "r") as hf:
+                f.write(hf.read())
+            f.write("```\n\n")
+
+        f.write("## 5. Reproducibility\n\n")
         f.write(
             "All raw JSON metrics and CSV workloads used to generate this report are stored in:\n"
         )

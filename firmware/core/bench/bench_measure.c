@@ -13,6 +13,7 @@
 #include "bench_measure.h"
 
 #include "bench_config.h"
+#include "bench_hal.h"
 
 #include "drv_timer.h"
 
@@ -72,7 +73,7 @@ uint64_t bench_dwt_cycles64(void)
 
 uint32_t bench_cycles_to_us(uint64_t cycles)
 {
-    return (uint32_t)(cycles / 480);  // 480 MHz core clock
+    return (uint32_t)(cycles / BENCH_CORE_CLOCK_MHZ);
 }
 
 void bench_log_event(BenchEvent_t event, uint8_t task_id, uint32_t value)

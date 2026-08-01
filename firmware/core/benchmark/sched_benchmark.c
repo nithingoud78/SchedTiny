@@ -12,6 +12,7 @@
 
 #include "sched_benchmark.h"
 
+#include "bench_hal.h"
 #include "sched_adaptive.h"
 #include "sched_dispatcher.h"
 #include "sched_edf.h"
@@ -871,7 +872,9 @@ SchedStatus_t sched_benchmark_export_json(const sched_benchmark_t *ctx,
                 "    \"AdaptiveSwitches\":%lu,\n"
                 "    \"AdaptiveDecisionLatency\":%lu,\n"
                 "    \"AdaptiveOverheadTicks\":%lu,\n"
-                "    \"AdaptiveAccuracy\":%.2f\n"
+                "    \"AdaptiveAccuracy\":%.2f,\n"
+                "    \"HardwareVariant\":\"%s\",\n"
+                "    \"ClockFrequencyMHz\":%u\n"
                 "  }%s",
                 policy_to_string((sched_benchmark_policy_t)i), (unsigned long)r->total_tasks,
                 cpu_util, (unsigned long)r->avg_scheduling_latency,
@@ -891,7 +894,7 @@ SchedStatus_t sched_benchmark_export_json(const sched_benchmark_t *ctx,
                 (unsigned long)r->adaptive_decisions, (unsigned long)r->adaptive_switches,
                 (unsigned long)r->adaptive_decision_latency,
                 (unsigned long)r->adaptive_overhead_ticks, (float)r->adaptive_accuracy_bp / 100.0f,
-                is_last ? "" : ",");
+                BENCH_MCU_VARIANT, (unsigned)BENCH_CORE_CLOCK_MHZ, is_last ? "" : ",");
             if (written < 0 || (size_t)written >= max_len - offset)
                 return SCHED_ERR_OVERFLOW;
             offset += written;
