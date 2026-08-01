@@ -16,12 +16,51 @@
 #include <stdlib.h>
 #include <string.h>
 
+static int parse_workload_csv(const char *filename, sched_benchmark_t *ctx)
+{
+    FILE *f = fopen(filename, "r");
+    if (!f)
+    {
+        fprintf(stderr, "Could not open workload CSV: %s\n", filename);
+        return -1;
+    }
+
+    char line[256];
+    // Skip header
+    if (!fgets(line, sizeof(line), f))
+    {
+        fclose(f);
+        return -1;
+    }
+
+    ctx->task_count = 0;
+    while (fgets(line, sizeof(line), f) && ctx->task_count < SCHED_BENCHMARK_MAX_TASKS)
+    {
+        sched_benchmark_task_t *task = &ctx->tasks[ctx->task_count];
+        // Expected format:
+        // TaskID,ExecutionTime,Period,Deadline,ReleaseTime,Priority,WorkloadType,Criticality,LoWCET,HiWCET
+        int parsed =
+            sscanf(line, "%lu,%lu,%lu,%lu,%lu,%lu,%u,%hhu,%lu,%lu", (unsigned long *)&task->task_id,
+                   (unsigned long *)&task->execution_time, (unsigned long *)&task->period,
+                   (unsigned long *)&task->deadline, (unsigned long *)&task->release_time,
+                   (unsigned long *)&task->priority, &task->workload_type, &task->criticality,
+                   (unsigned long *)&task->lo_wcet, (unsigned long *)&task->hi_wcet);
+        if (parsed >= 10)
+        {
+            ctx->task_count++;
+        }
+    }
+    fclose(f);
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
     sched_benchmark_profile_t profile = SCHED_BENCHMARK_PROFILE_SMALL;
     uint32_t seed                     = 42;
     uint32_t sim_ticks                = 10000;
     const char *format                = "csv";
+    const char *csv_file              = NULL;
 
     for (int i = 1; i < argc; i++)
     {
@@ -49,6 +88,10 @@ int main(int argc, char *argv[])
         {
             format = argv[++i];
         }
+        else if (strcmp(argv[i], "--workload-csv") == 0 && i + 1 < argc)
+        {
+            csv_file = argv[++i];
+        }
     }
 
     sched_benchmark_t ctx;
@@ -58,10 +101,21 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if (sched_benchmark_load_workload(&ctx, profile, seed) != SCHED_OK)
+    if (csv_file)
     {
-        fprintf(stderr, "Failed to load workload\n");
-        return 1;
+        if (parse_workload_csv(csv_file, &ctx) != 0)
+        {
+            fprintf(stderr, "Failed to load CSV workload\n");
+            return 1;
+        }
+    }
+    else
+    {
+        if (sched_benchmark_load_workload(&ctx, profile, seed) != SCHED_OK)
+        {
+            fprintf(stderr, "Failed to load workload\n");
+            return 1;
+        }
     }
 
     if (sched_benchmark_run_all(&ctx, sim_ticks) != SCHED_OK)
