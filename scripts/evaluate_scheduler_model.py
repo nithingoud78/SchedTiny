@@ -152,7 +152,7 @@ def main():
 
     print("\nEvaluation Metrics:")
     if metrics:
-        print(f"  Accuracy:  {metrics.get('accuracy', 0)*100:.2f}%")
+        print(f"  Accuracy:  {metrics.get('accuracy', 0) * 100:.2f}%")
         print(f"  Precision: {metrics.get('precision', 0):.4f}")
         print(f"  Recall:    {metrics.get('recall', 0):.4f}")
         print(f"  F1 Score:  {metrics.get('f1', 0):.4f}")

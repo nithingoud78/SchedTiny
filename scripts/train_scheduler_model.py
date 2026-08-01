@@ -174,7 +174,7 @@ def main():
     final_f1 = f1_score(y_test, y_pred, average="weighted", zero_division=0)
 
     print("\nFinal Test Set Metrics:")
-    print(f"  Accuracy:  {final_acc*100:.2f}%")
+    print(f"  Accuracy:  {final_acc * 100:.2f}%")
     print(f"  Precision: {final_prec:.4f}")
     print(f"  Recall:    {final_rec:.4f}")
     print(f"  F1 Score:  {final_f1:.4f}")
