@@ -35,7 +35,7 @@ def plot_radar_chart(out_path: Path):
     ]
     num_vars = len(labels)
 
-    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+    angles = list(np.linspace(0, 2 * np.pi, num_vars, endpoint=False))
     angles += angles[:1]
 
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
