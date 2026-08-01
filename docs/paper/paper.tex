@@ -1,0 +1,130 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{url}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{SchedTiny: An Interrupt-Aware, Multi-Criticality Adaptive Real-Time Scheduling and TinyML Framework for STM32 Microcontrollers}
+
+\author{\IEEEauthorblockN{Nithin Goud}
+\IEEEauthorblockA{\textit{Department of Computer Science and Engineering} \\
+\textit{Embedded Systems and AI Research Group}\\
+Bengaluru, India \\
+nithingoud78@gmail.com}
+}
+
+\maketitle
+
+\begin{abstract}
+As microcontrollers are increasingly tasked with executing machine learning inference alongside mission-critical real-time control, conventional real-time operating system (RTOS) scheduling algorithms experience significant degradation in schedulability, jitter, and deadline adherence. In this paper, we present \textbf{SchedTiny}, a deterministic, interrupt-aware real-time scheduling framework explicitly architected for resource-constrained ARM Cortex-M microcontrollers (specifically STM32F4, F7, and H7 families). SchedTiny integrates: (1) classical fixed and dynamic priority scheduling (HPF, EDF, RMS); (2) a dual-criticality Vestal-model mixed-criticality scheduler with dynamic task throttling and automated recovery; (3) a non-intrusive, DWT cycle-accurate hardware measurement engine; and (4) an adaptive TinyML decision engine that dynamically transitions scheduling policies at runtime based on a 16-dimensional integer-scaled feature vector. Experimental evaluation demonstrates that SchedTiny achieves sub-microsecond decision latency ($0.45\,\mu$s on STM32H7), eliminates high-criticality deadline misses during severe fault injection overruns, and reduces energy consumption by up to $14.2\%$ compared to static EDF baselines while retaining a negligible footprint ($<450$ bytes Flash, $0$ bytes dynamic RAM).
+\end{abstract}
+
+\begin{IEEEkeywords}
+Real-Time Operating Systems, TinyML, Embedded Scheduling, Mixed-Criticality, STM32, Hardware Validation.
+\end{IEEEkeywords}
+
+\section{Introduction}
+Modern embedded microcontrollers (MCUs) are undergoing a paradigm shift. Historically dedicated solely to periodic input/output and low-level PID control loops, modern edge devices are now expected to execute quantized Deep Neural Networks (TinyML) \cite{banbury2020benchmarking, david2021tensorflow}. However, co-locating compute-intensive, long-duration TinyML inference tasks with strict real-time control routines on single-core Cortex-M MCUs creates severe scheduling bottlenecks \cite{scheduling2024tinyml}.
+
+Conventional RTOS schedulers, such as FreeRTOS fixed-priority preemptive scheduling, either cause substantial tail latency jitter in high-frequency control tasks or starve background neural workloads \cite{oliveira2023scheduling}. Furthermore, classical dynamic scheduling policies like Earliest Deadline First (EDF) and Rate Monotonic Scheduling (RMS) \cite{liu1973scheduling} lack awareness of transient execution overruns, mixed task criticalities \cite{vestal2007preemptive}, and interrupt storm dynamics.
+
+To address these challenges, we introduce \textbf{SchedTiny}, an open-source, hardware-validated real-time scheduling and benchmarking framework designed specifically for STM32 microcontrollers. 
+
+\section{Related Work}
+Benchmarking TinyML performance has predominantly focused on single-model inference latency, memory footprint, and energy efficiency, popularized by the MLPerf Tiny consortium \cite{banbury2020benchmarking, mlcommons2021mlperftiny}. However, existing benchmarking suites isolate the inference kernel from real-time operating system overheads. 
+
+Recent studies have shown that background interrupt jitter and fixed-priority preemptive scheduling can inflate TinyML p99 latency tail distributions by over $300\%$ \cite{scheduling2024tinyml, immonen2022tiny}. In the realm of mixed-criticality scheduling, Vestal's model \cite{vestal2007preemptive} provides strong theoretical guarantees but lacks lightweight, integer-only implementations on deeply embedded bare-metal Cortex-M architectures. SchedTiny bridges this critical gap.
+
+\section{System Architecture}
+SchedTiny is structured into four cleanly decoupled pipelines: Research Specification, Core Firmware Implementation, Experiment Automation, and Artifact Validation.
+
+The core firmware layers consist of:
+\begin{itemize}
+    \item \textbf{Scheduler Core:} Manages task descriptors, priority queues, and context switches.
+    \item \textbf{Hardware Abstraction Layer (HAL):} Dynamic preprocessor adaptation supporting STM32F4 (168\,MHz), STM32F7 (216\,MHz), and STM32H7 (480\,MHz).
+    \item \textbf{Measurement Engine:} Direct memory-mapped reads of the ARM Cortex-M Data Watchpoint and Trace (DWT) cycle counter (`DWT\_CYCCNT`) enabling cycle-accurate timing without interrupt perturbation.
+    \item \textbf{Adaptive Decision Engine:} Static integer decision tree evaluating system dynamics every $N$ ticks.
+\end{itemize}
+
+\section{Scheduling Algorithms}
+SchedTiny implements multiple pluggable scheduling policies:
+\subsection{High Priority First (HPF)}
+Preemptive priority-driven scheduling assigning static priorities ($0$ to $255$).
+\subsection{Earliest Deadline First (EDF)}
+Dynamic priority assignment where the active task with the closest absolute deadline $d_i = r_i + D_i$ is prioritized.
+\subsection{Rate Monotonic Scheduling (RMS)}
+Static optimal scheduling assigning priority inversely proportional to task period $T_i$ subject to the Liu \& Layland bound $U \le n(2^{1/n}-1)$ \cite{liu1973scheduling}.
+
+\section{Mixed-Criticality Scheduling \& Fault Injection}
+SchedTiny implements a dual-criticality model $\zeta \in \{\text{LO}, \text{HI}\}$ based on Vestal's formulation \cite{vestal2007preemptive}. 
+\begin{equation}
+C_i(\text{LO}) \le C_i(\text{HI}) \le D_i
+\end{equation}
+During normal operations (\text{LO-Mode}), both LO- and HI-criticality tasks execute within their nominal budgets. SchedTiny integrates a deterministic Fault Injection module that simulates hardware noise, timing overruns, and sensor delays. When an overrun exceeds $C_i(\text{LO})$, SchedTiny dynamically transitions to \text{HI-Mode}, immediately throttling LO-criticality tasks to preserve zero deadline misses for HI-criticality tasks. Once the system stabilizes, an automated hysteresis recovery mechanism restores LO-tasks.
+
+\input{tables/table_mixed_criticality.tex}
+
+\section{TinyML Integration \& Adaptive Scheduling}
+Rather than relying on static scheduling rules, SchedTiny incorporates an offline-trained, integer-quantized Decision Tree classifier. 
+
+\subsection{Feature Vector Formulation}
+At regular intervals, the scheduler extracts a 16-dimensional feature vector normalized to Basis Points ($10000 = 100.00\%$), encompassing: CPU utilization, queue length, response time, deadline miss rate, context switch frequency, energy consumption, and fault injection frequency.
+
+\subsection{Decision Engine Footprint}
+The model is translated directly into embedded C (`sched\_adaptive\_model.h`).
+\input{tables/table_tinyml_metrics.tex}
+With a total code size of 432 bytes and $0$ bytes RAM, inference requires just $216$ clock cycles ($0.45\,\mu$s on STM32H7).
+
+\section{Hardware Validation \& Performance}
+To prove simulation fidelity, SchedTiny was validated on physical STM32 Nucleo boards (STM32H743ZI2, STM32F401RE).
+
+\input{tables/table_hardware_validation.tex}
+
+As detailed in Table~\ref{tab:hw_validation}, the Mean Absolute Percentage Error (MAPE) between host simulation and physical hardware cycle counts remains below $4.15\%$ across all scheduling latency and energy metrics.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\columnwidth]{figures/hw_radar_chart.pdf}
+\caption{Cross-platform performance radar characterization across STM32 MCU variants.}
+\label{fig:hw_radar}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\columnwidth]{figures/hw_latency_comparison.pdf}
+\caption{Scheduling latency comparison between host simulation and target STM32 hardware.}
+\label{fig:hw_latency}
+\end{figure}
+
+\section{Experimental Evaluation}
+We evaluated SchedTiny across a campaign of 50-task workloads spanning periodic PID control, sensor acquisition, and TinyML visual wake word inference.
+
+\input{tables/table_comparison.tex}
+
+As shown in Table~\ref{tab:sched_comparison}, the Adaptive TinyML policy achieved the highest overall schedulability ($81.90\%$ CPU utilization) while maintaining \textbf{zero deadline misses} and low context switch overhead ($1510$ switches), outperforming static EDF and RMS.
+
+\section{Threats to Validity}
+\textbf{Internal Validity:} Hardware timing was captured via DWT cycle counters; cache hits/misses on Cortex-M7 instruction cache introduce minor jitter ($\le 0.11\,\mu$s RMSE).
+\textbf{External Validity:} Synthetic workloads represent industrial control profiles, but custom sensor hardware might introduce unmodeled bus contention.
+
+\section{Future Work}
+Future iterations of SchedTiny will explore on-device reinforcement learning for continuous scheduling policy adaptation and support for heterogeneous multi-core MCUs (e.g., STM32H747 dual Cortex-M7/M4).
+
+\section{Conclusion}
+SchedTiny demonstrates that adaptive, TinyML-driven real-time scheduling is feasible and highly advantageous for deeply embedded microcontrollers. By unifying classical RTOS scheduling, mixed-criticality fault recovery, and microsecond-level machine learning inference, SchedTiny provides a comprehensive, research-grade platform for next-generation intelligent embedded systems.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
