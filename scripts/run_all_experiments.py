@@ -153,6 +153,35 @@ def main():
         ]
     )
 
+    print("Running TinyML Pipeline...")
+    subprocess.run(
+        [
+            "python",
+            str(root / "scripts" / "train_scheduler_model.py"),
+            "--results-dir",
+            str(out_dir),
+        ]
+    )
+    subprocess.run(
+        [
+            "python",
+            str(root / "scripts" / "evaluate_scheduler_model.py"),
+            "--results-dir",
+            str(out_dir),
+        ]
+    )
+    subprocess.run(
+        [
+            "python",
+            str(root / "scripts" / "export_decision_tree.py"),
+            "--results-dir",
+            str(out_dir),
+            "--out",
+            str(root / "firmware" / "include" / "sched_adaptive_model.h"),
+        ]
+    )
+
+    print("Generating Report...")
     subprocess.run(["python", str(root / "scripts" / "make_report.py")])
     print("Done!")
 

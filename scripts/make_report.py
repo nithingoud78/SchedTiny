@@ -65,7 +65,17 @@ def main():
                     "(Available in experiment output directory)\n\n"
                 )
 
-        f.write("## 3. Reproducibility\n\n")
+        f.write("## 3. TinyML Validation\n\n")
+
+        ml_json = exp_dir / "tinyml_metrics.json"
+        if ml_json.exists():
+            f.write("### Model Footprint & Cross-Validation Metrics\n")
+            f.write("```json\n")
+            with open(ml_json, "r") as tf:
+                f.write(tf.read())
+            f.write("```\n\n")
+
+        f.write("## 4. Reproducibility\n\n")
         f.write(
             "All raw JSON metrics and CSV workloads used to generate this report are stored in:\n"
         )

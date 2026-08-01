@@ -2,26 +2,29 @@
 """
 export_decision_tree.py
 Generates C code for the decision tree inference model (sched_adaptive_model.h)
-from a trained scikit-learn model.
-
-Usage:
-    python scripts/export_decision_tree.py \\
-        --results-dir results/latest \\
-        --out firmware/include/sched_adaptive_model.h
+from a trained scikit-learn model, embedding rich training metadata.
 """
 
 import argparse
 import sys
 from pathlib import Path
 import pickle
+import hashlib
 from datetime import datetime
 from sklearn.tree import _tree
 
 
+def get_file_hash(filepath: Path) -> str:
+    if not filepath.exists():
+        return "UNKNOWN"
+    sha256_hash = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    return sha256_hash.hexdigest()[:16]
+
+
 def tree_to_c_code(tree_, feature_names, target_names):
-    """
-    Recursively generates nested if-else C statements representing the decision tree.
-    """
     tree = tree_.tree_
     feature_name = [
         feature_names[i] if i != _tree.TREE_UNDEFINED else "undefined!"
@@ -44,7 +47,6 @@ def tree_to_c_code(tree_, feature_names, target_names):
             recurse(tree.children_right[node], depth + 1)
             lines.append(f"{indent}}}")
         else:
-            # Leaf node
             val = tree.value[node][0]
             class_idx = val.argmax()
             class_name = target_names[class_idx]
@@ -54,20 +56,18 @@ def tree_to_c_code(tree_, feature_names, target_names):
     return "\n".join(lines)
 
 
-def generate_header(clf, features, target_names, accuracy, out_file: Path):
-
-    date_str = datetime.now().strftime("%Y-%m-%d")
-    acc_bp = int(accuracy * 10000)
+def generate_header(clf, features, target_names, metrics, dataset_hash, out_file: Path):
+    date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    acc_bp = int(metrics.get("accuracy", 0) * 10000)
+    f1_bp = int(metrics.get("f1", 0) * 10000)
 
     c_code = tree_to_c_code(clf, features, target_names)
 
-    # Feature importance array
     importances = clf.feature_importances_
     importance_strs = []
     for i, f in enumerate(features):
         imp_bp = int(importances[i] * 10000)
         importance_strs.append(f"        {imp_bp}, /* {i:2d}: {f:24s} */")
-
     importance_arr = "\n".join(importance_strs)
 
     content = f"""/**
@@ -79,10 +79,9 @@ def generate_header(clf, features, target_names, accuracy, out_file: Path):
  *
  * @author  @nithingoud78 (auto-generated)
  * @date    {date_str}
- * @version 0.1.0
+ * @version 1.0.0
  *
  * @copyright Copyright (c) 2026 SchedTiny Contributors
- *            Apache License, Version 2.0
  */
 
 #ifndef SCHEDTINY_SCHED_ADAPTIVE_MODEL_H
@@ -99,11 +98,13 @@ extern "C"
 #include <stdint.h>
 
 /**
- * @brief   Model metadata.
+ * @brief   Model Training Metadata.
  */
-#define SCHED_ADAPTIVE_MODEL_VERSION    "0.1.0"
+#define SCHED_ADAPTIVE_MODEL_VERSION    "1.0.0"
 #define SCHED_ADAPTIVE_MODEL_DATE       "{date_str}"
-#define SCHED_ADAPTIVE_MODEL_ACCURACY   {acc_bp} /* {(accuracy * 100):.2f}% estimated accuracy */
+#define SCHED_ADAPTIVE_DATASET_HASH     "{dataset_hash}"
+#define SCHED_ADAPTIVE_MODEL_ACCURACY   {acc_bp} /* {(metrics.get("accuracy", 0) * 100):.2f}% */
+#define SCHED_ADAPTIVE_MODEL_F1         {f1_bp} /* {(metrics.get("f1", 0) * 100):.2f}% */
 #define SCHED_ADAPTIVE_MODEL_MAX_DEPTH  {clf.max_depth}
 #define SCHED_ADAPTIVE_MODEL_NUM_LEAVES {clf.tree_.n_leaves}
 
@@ -112,30 +113,6 @@ extern "C"
      */
     static const uint32_t sched_adaptive_feature_importance[SCHED_ADAPTIVE_NUM_FEATURES] = {{
 {importance_arr}
-    }};
-
-    /**
-     * @brief   Lookup table for fast policy selection.
-     *
-     * Indexed by [utilization_bucket][criticality_bucket].
-     * Utilization buckets:  0=<25%, 1=25-50%, 2=50-75%, 3=75-100%
-     * Criticality buckets: 0=<25%, 1=25-50%, 2=50-75%, 3=>75%
-     */
-    static const sched_benchmark_policy_t
-        sched_adaptive_lookup_table[4][4] = {{
-            /* util\\crit   <25%                 25-50%               50-75%            >75%
-             */
-            /* <25%  */ {{SCHED_BENCHMARK_POLICY_RMS, SCHED_BENCHMARK_POLICY_RMS,
-                         SCHED_BENCHMARK_POLICY_MC, SCHED_BENCHMARK_POLICY_MC}},
-            /* 25-50%*/
-            {{SCHED_BENCHMARK_POLICY_RMS, SCHED_BENCHMARK_POLICY_HPF,
-             SCHED_BENCHMARK_POLICY_MC, SCHED_BENCHMARK_POLICY_MC}},
-            /* 50-75%*/
-            {{SCHED_BENCHMARK_POLICY_HPF, SCHED_BENCHMARK_POLICY_EDF,
-             SCHED_BENCHMARK_POLICY_EDF, SCHED_BENCHMARK_POLICY_MC}},
-            /* >75% */
-            {{SCHED_BENCHMARK_POLICY_EDF, SCHED_BENCHMARK_POLICY_EDF,
-             SCHED_BENCHMARK_POLICY_MC, SCHED_BENCHMARK_POLICY_MC}},
     }};
 
     /**
@@ -160,7 +137,6 @@ extern "C"
 """
     with open(out_file, "w") as f:
         f.write(content)
-
     print(f"Successfully wrote generated C header to {out_file}")
 
 
@@ -174,7 +150,10 @@ def main():
     )
     args = parser.parse_args()
 
-    model_path = Path(args.results_dir) / "adaptive_model.pkl"
+    results_dir = Path(args.results_dir)
+    model_path = results_dir / "adaptive_model.pkl"
+    dataset_path = results_dir / "aggregated_results.csv"
+
     if not model_path.exists():
         print(
             f"Error: Model not found at {model_path}. Run train_scheduler_model.py first."
@@ -187,16 +166,14 @@ def main():
     clf = model_data["clf"]
     features = model_data["features"]
     target_names = model_data["target_names"]
-    accuracy = model_data["accuracy"]
+    metrics = model_data.get("metrics", {})
+
+    dataset_hash = get_file_hash(dataset_path)
 
     out_file = Path(args.out)
     out_file.parent.mkdir(parents=True, exist_ok=True)
 
-    generate_header(clf, features, target_names, accuracy, out_file)
-
-    print(
-        "\nNext step: Rebuild firmware to include the new model and run clang-format."
-    )
+    generate_header(clf, features, target_names, metrics, dataset_hash, out_file)
 
 
 if __name__ == "__main__":
