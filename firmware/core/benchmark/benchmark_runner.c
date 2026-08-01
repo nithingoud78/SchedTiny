@@ -152,11 +152,11 @@ int main(int argc, char *argv[])
     if (validate_tinyml)
     {
         printf("\n--- TinyML Hardware Validation ---\n");
-        sched_adaptive_features_t f = {0};
-        f.cpu_utilization_bp =
-            (ctx.stats.busy_ticks * 10000) / (ctx.stats.busy_ticks + ctx.stats.idle_ticks + 1);
+        sched_adaptive_features_t f    = {0};
+        sched_benchmark_results_t *res = &ctx.results[SCHED_BENCHMARK_POLICY_HPF];
+        f.cpu_utilization_bp    = (res->busy_time * 10000) / (res->busy_time + res->idle_time + 1);
         f.task_count            = ctx.task_count;
-        f.deadline_miss_rate_bp = (ctx.stats.deadline_misses * 10000) / ((ctx.task_count * 10) + 1);
+        f.deadline_miss_rate_bp = (res->deadline_misses * 10000) / ((ctx.task_count * 10) + 1);
         f.hi_criticality_ratio_bp = 3000;
 
         clock_t start_ml                            = clock();
