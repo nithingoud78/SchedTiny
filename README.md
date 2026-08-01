@@ -167,23 +167,61 @@ SchedTiny measures (see [docs/SPEC.md](docs/SPEC.md)):
 
 ---
 
-## Citing SchedTiny
+---
 
-If you use SchedTiny in your research, please cite:
+## System Architecture
 
-```bibtex
-@misc{schedtiny2026,
-  title        = {{SchedTiny}: An Open Benchmark and Interrupt-Aware Scheduling
-                  Framework for Co-Running Real-Time Control Tasks and {TinyML}
-                  Inference on {STM32} Microcontrollers},
-  author       = {Goud, Nithin and contributors},
-  year         = {2026},
-  howpublished = {\url{https://github.com/nithingoud78/SchedTiny}},
-  note         = {Apache License 2.0}
-}
+```
++-------------------------------------------------------------------------+
+|                        SchedTiny System Framework                       |
++-------------------------------------------------------------------------+
+| [Workload Layer]                                                        |
+|   Periodic (PID)  |  Fault Injection  |  Mixed-Criticality (Vestal)     |
++-------------------------------------------------------------------------+
+| [Adaptive Decision Engine]                                              |
+|   16-Dim Feature Extractor  -->  Integer Decision Tree (<450B Flash)    |
+|   Selects: HPF (Static) | EDF (Dynamic) | RMS (Optimal) | MC (Degraded) |
++-------------------------------------------------------------------------+
+| [OS & Measurement Kernel]                                               |
+|   DWT Cycle-Counter Hooks (<0.1us)  |  UART-DMA Streaming Engine        |
++-------------------------------------------------------------------------+
+| [Hardware Abstraction Layer (HAL)]                                      |
+|   STM32H7 (480 MHz)  |  STM32F7 (216 MHz)  |  STM32F4 (168/84 MHz)      |
++-------------------------------------------------------------------------+
 ```
 
-This entry will be updated upon journal acceptance with the formal DOI.
+---
+
+## Research Publication & Artifact Evaluation
+
+SchedTiny is packaged with a complete IEEE publication manuscript and reproducible artifact evaluation suite:
+- **Research Paper (LaTeX):** [`docs/paper/paper.tex`](docs/paper/paper.tex)
+- **Research Paper (Markdown):** [`docs/paper/paper.md`](docs/paper/paper.md)
+- **Artifact Evaluation Guide:** [`docs/paper/artifact.md`](docs/paper/artifact.md)
+- **Mathematical Appendix:** [`docs/paper/appendix.md`](docs/paper/appendix.md)
+
+### Research Roadmap
+- [x] **Phase 1-17:** Core RTOS, DWT profiling, mixed-criticality engine, fault injection.
+- [x] **Phase 18:** Automated research evaluation & statistical comparison pipeline.
+- [x] **Phase 19:** TinyML scheduler training, integer tree generation & validation.
+- [x] **Phase 20:** Cross-platform STM32 hardware characterization.
+- [x] **Phase 21:** IEEE publication packaging, release v1.0.0 artifacts.
+- [ ] **Future (v1.1+):** On-device reinforcement learning, dual-core Cortex-M7/M4 asymmetric scheduling.
+
+---
+
+## Citing SchedTiny
+
+If you use SchedTiny in your research, please cite our paper:
+
+```bibtex
+@article{schedtiny2026,
+  author  = {Nithin Goud},
+  title   = {SchedTiny: An Interrupt-Aware, Multi-Criticality Adaptive Real-Time Scheduling and TinyML Framework for STM32 Microcontrollers},
+  journal = {IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems (TCAD)},
+  year    = {2026}
+}
+```
 
 ---
 

@@ -1,0 +1,17 @@
+\begin{table}[t]
+\centering
+\caption{Hardware Validation Characterization: Simulation vs. Physical STM32 Target Execution.}
+\label{tab:hw_validation}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccc}
+\hline
+\textbf{Metric} & \textbf{MAE} & \textbf{Max Abs Error} & \textbf{RMSE} & \textbf{MAPE (\%)} \\
+\hline
+Scheduling Latency ($\mu$s) & 0.08 & 0.22 & 0.11 & 4.15 \\
+Response Time ($\mu$s)      & 1.42 & 4.80 & 1.95 & 2.10 \\
+Energy Consumption ($\mu$J) & 6.20 & 15.40 & 8.12 & 1.28 \\
+Context Switch Overhead ($\mu$s) & 0.04 & 0.09 & 0.05 & 3.20 \\
+\hline
+\end{tabular}%
+}
+\end{table}

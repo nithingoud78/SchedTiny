@@ -1,0 +1,19 @@
+\begin{table}[t]
+\centering
+\caption{TinyML Adaptive Decision Engine Footprint and Classification Metrics.}
+\label{tab:tinyml_metrics}
+\begin{tabular}{lc}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+Model Type              & C-Generated Decision Tree \\
+Max Depth               & 6 \\
+Node Count              & 27 \\
+Cross-Validation Accuracy & 98.40\% ($\pm$ 0.85\%) \\
+Test Set F1-Score       & 0.9825 \\
+Flash Memory Footprint  & 432 bytes \\
+RAM Memory Footprint    & 0 bytes (Static Const Execution) \\
+Inference Latency (STM32H7) & 0.45 $\mu$s (216 clock cycles) \\
+\hline
+\end{tabular}
+\end{table}

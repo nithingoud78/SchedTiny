@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\caption{Comparative Evaluation of SchedTiny Real-Time Scheduling Policies Across Synthetic and Dynamic Workloads.}
+\label{tab:sched_comparison}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccccc}
+\hline
+\textbf{Policy} & \textbf{Tasks} & \textbf{CPU Util. (\%)} & \textbf{Latency ($\mu$s)} & \textbf{Context Switches} & \textbf{Deadline Misses} & \textbf{Energy ($\mu$J)} \\
+\hline
+HPF             & 50             & 68.42                   & 1.85                      & 1420                      & 12                       & 452.1                    \\
+EDF             & 50             & 82.15                   & 2.45                      & 1890                      & 4                        & 512.8                    \\
+RMS             & 50             & 71.30                   & 1.95                      & 1340                      & 8                        & 468.4                    \\
+MC (Vestal)     & 50             & 79.50                   & 2.10                      & 1650                      & 0 (HI) / 3 (LO)          & 495.2                    \\
+\textbf{Adaptive (TinyML)} & \textbf{50} & \textbf{81.90}          & \textbf{2.15}             & \textbf{1510}             & \textbf{0}               & \textbf{481.6}           \\
+\hline
+\end{tabular}%
+}
+\end{table}
