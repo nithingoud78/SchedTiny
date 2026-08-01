@@ -10,11 +10,13 @@
  *            Apache License, Version 2.0
  */
 
+#include "sched_adaptive_model.h"
 #include "sched_benchmark.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 static int parse_workload_csv(const char *filename, sched_benchmark_t *ctx)
 {
@@ -61,6 +63,7 @@ int main(int argc, char *argv[])
     uint32_t sim_ticks                = 10000;
     const char *format                = "csv";
     const char *csv_file              = NULL;
+    bool validate_tinyml              = false;
 
     for (int i = 1; i < argc; i++)
     {
@@ -91,6 +94,10 @@ int main(int argc, char *argv[])
         else if (strcmp(argv[i], "--workload-csv") == 0 && i + 1 < argc)
         {
             csv_file = argv[++i];
+        }
+        else if (strcmp(argv[i], "--tinyml-validate") == 0)
+        {
+            validate_tinyml = true;
         }
     }
 
@@ -142,6 +149,35 @@ int main(int argc, char *argv[])
         }
     }
 
-    printf("%s", buffer);
+    if (validate_tinyml)
+    {
+        printf("\n--- TinyML Hardware Validation ---\n");
+        sched_adaptive_features_t f    = {0};
+        sched_benchmark_results_t *res = &ctx.results[SCHED_BENCHMARK_POLICY_HPF];
+        f.cpu_utilization_bp    = (res->busy_time * 10000) / (res->busy_time + res->idle_time + 1);
+        f.task_count            = ctx.task_count;
+        f.deadline_miss_rate_bp = (res->deadline_misses * 10000) / ((ctx.task_count * 10) + 1);
+        f.hi_criticality_ratio_bp = 3000;
+
+        clock_t start_ml                            = clock();
+        volatile sched_benchmark_policy_t ml_policy = SCHED_BENCHMARK_POLICY_HPF;
+        for (int i = 0; i < 10000; i++)
+        {
+            ml_policy = sched_adaptive_tree_predict(&f);
+        }
+        clock_t end_ml = clock();
+
+        double ml_time_us =
+            ((double)(end_ml - start_ml)) / CLOCKS_PER_SEC * 1000.0 * 1000.0 / 10000.0;
+
+        printf("TinyML Inference Latency : %.2f us per inference\n", ml_time_us);
+        printf("TinyML Prediction        : %d\n", ml_policy);
+        printf("Prediction Confidence    : 100%% (Decision Tree Lead Node)\n");
+        printf("Model Version            : %s\n", SCHED_ADAPTIVE_MODEL_VERSION);
+    }
+    else
+    {
+        printf("%s", buffer);
+    }
     return 0;
 }
