@@ -258,7 +258,6 @@ Please review [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/DEVELOPER_GUIDE.md](d
 
 ---
 
->>>>>>> Stashed changes
 ## License
 
 Copyright 2026 SchedTiny Contributors.  
