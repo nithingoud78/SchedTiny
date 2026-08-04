@@ -232,8 +232,7 @@ Please review [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/DEVELOPER_GUIDE.md](d
 
 ---
 
-<<<<<<< Updated upstream
-=======
+
 ## Project Links
 
 - [Changelog](CHANGELOG.md)
