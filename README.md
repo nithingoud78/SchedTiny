@@ -232,6 +232,33 @@ Please review [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/DEVELOPER_GUIDE.md](d
 
 ---
 
+<<<<<<< Updated upstream
+=======
+## Project Links
+
+- [Changelog](CHANGELOG.md)
+- [Roadmap](ROADMAP.md)
+- [Security Policy](SECURITY.md)
+
+---
+
+## Author
+
+<div align="center">
+
+**Built and maintained by K Nithin Kumar Goud**
+
+[![GitHub](https://img.shields.io/badge/GitHub-@nithingoud78-black?style=flat-square&logo=github)](https://github.com/nithingoud78)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-nithingoud78-black?style=flat-square&logo=linkedin)](https://linkedin.com/in/nithin-goud78)
+[![Email](https://img.shields.io/badge/k.nithingoud78@gmail.com-black?style=flat-square&logo=gmail)](mailto:k.nithingoud78@gmail.com)
+
+</div>
+
+<br />
+
+---
+
+>>>>>>> Stashed changes
 ## License
 
 Copyright 2026 SchedTiny Contributors.  
